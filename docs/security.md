@@ -33,6 +33,18 @@ Every migration follows these. `supabase/tests/database/00_security_guards.test.
 - **Roles**: `private.user_roles` + `public.has_role(text)`. Granting a role is an operational, per-environment action, never a migration or an env var.
 - **After every migration**, run the Supabase security advisors and resolve new warnings.
 
+## Accepted advisor findings
+
+Run the advisors after every migration (`supabase db advisors --linked`, or `get_advisors` over MCP). These findings are expected and stay:
+
+| Lint | Where | Why it stays |
+|---|---|---|
+| `authenticated_security_definer_function_executable` (WARN) | The write RPCs (`create_report`, `add_sighting`, `mark_reunited`, `renew_report`, `start_conversation`, `flag_content`, `moderate`) and `has_role` | They are the API: the only way to write those tables, so signed-in users must call them. Each takes the caller from `auth.uid()`, checks authorization in its body, pins `search_path`, and is revoked from `anon`. `has_role` must be definer to read `private.user_roles`, and RLS policies call it as `authenticated`. |
+| `rls_enabled_no_policy` (INFO) | `private.user_roles` | No API role should read it at all; `has_role()` is the only path. |
+| `unused_index` (INFO) | Any | Until there is real traffic. Revisit with production stats before dropping one. |
+
+Anything else is a regression to fix before merging.
+
 ## Testing policies
 
 Each table's pgTAP file covers at least: anonymous user, another signed-in user, the owner, and a moderator. Assert that forbidden reads return nothing and forbidden writes raise, not only that allowed access works.
