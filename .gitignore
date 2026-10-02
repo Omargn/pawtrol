@@ -1,0 +1,7 @@
+# Private planning notes: they describe another project and never go public.
+/docs/ideas.md
+
+.DS_Store
+node_modules/
+.env
+.env*.local
