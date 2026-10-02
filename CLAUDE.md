@@ -17,7 +17,8 @@ No workspace tooling (no root `package.json`). `apps/mobile` and `supabase` are 
 - Every new table needs RLS and a pgTAP test proving unauthorized access is rejected. `supabase/tests/database/00_security_guards.test.sql` fails CI otherwise.
 - `src/types/database.types.ts` is generated (`npx supabase gen types typescript --project-id <ref>`); never edit it by hand once the schema exists.
 - Install packages with `npx expo install`, not `npm install`, so versions match the SDK.
-- Docker is not available on the maintainer's machine: database tests run in CI. Don't claim a migration works until CI has run it.
+- Docker is not available on the maintainer's machine. Run `tools/db-check` (PGlite) after every migration or test change; it approximates Supabase, so a migration is only done once CI's real-stack run passes too.
+- Database tests must not depend on `seed.sql` (CI seeds before testing): scope every count to the test's own fixture ids.
 - `docs/ideas.md` is private and gitignored. Never commit it, quote it in public files, or reference the project it describes. `scripts/check-leaks.sh` guards this in CI.
 
 ## Verify
@@ -28,4 +29,5 @@ No workspace tooling (no root `package.json`). `apps/mobile` and `supabase` are 
 | Types | `npm run typecheck` |
 | Tests | `npm test` |
 | Leak guard | `./scripts/check-leaks.sh` (repo root) |
-| Database | CI only: `supabase db start && supabase test db` |
+| Database (fast, approximate) | `cd tools/db-check && npm run check` (repo root) |
+| Database (real stack) | CI: `supabase db start && supabase test db` |

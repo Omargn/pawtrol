@@ -1,0 +1,14 @@
+{
+  "name": "pawtrol-db-check",
+  "private": true,
+  "type": "module",
+  "description": "Runs the migrations and pgTAP tests on PGlite, without Docker. An approximation: CI on the real Supabase stack is the source of truth.",
+  "scripts": {
+    "check": "node run.mjs"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
+    "@electric-sql/pglite-pgtap": "^0.0.9",
+    "@electric-sql/pglite-postgis": "^0.2.8"
+  }
+}

@@ -2,11 +2,11 @@
 
 Lost and found pets on a map. Post a pet you lost or found, see reports near you, add a sighting ("I saw this dog here at 6 pm"), and message the owner without either side sharing a phone number or an email.
 
-> **Status:** early development (Phase 0 — skeleton). Nothing user-facing works yet; see the [roadmap](#roadmap).
+> **Status:** early development. The backend schema is in place; the app screens come next. See the [roadmap](#roadmap).
 
 ## Why it's built the way it is
 
-- **The database is the security boundary.** The app talks to Postgres directly through Supabase, so Row Level Security, not client code, decides who reads and writes what. Every policy is tested with pgTAP. → [docs/security.md](docs/security.md)
+- **The database is the security boundary.** The app talks to Postgres directly through Supabase, so Row Level Security, not client code, decides who reads and writes what. Every policy is tested with pgTAP. → [docs/security.md](docs/security.md), [docs/data-model.md](docs/data-model.md)
 - **Privacy by default.** Contact happens only through in-app chat. Public maps show a report's location rounded to about 100 m (the "last seen" spot is often someone's home). Photos are re-encoded on the device to strip EXIF GPS before upload.
 - **Contracts and adapters.** Screens and hooks depend on small per-feature contracts; Supabase and the native SDKs sit behind them, so tests run against in-memory fakes with no module mocks. → [docs/architecture.md](docs/architecture.md)
 
@@ -21,7 +21,7 @@ Expo (SDK 58) · Expo Router · React Native · TypeScript · TanStack Query · 
 | `apps/mobile` | The Expo app (iOS, Android) |
 | `supabase` | Migrations, pgTAP tests, seed data, local config |
 | `docs` | Architecture, security model, ADRs |
-| `scripts` | Repo tooling |
+| `scripts`, `tools` | Repo tooling; `tools/db-check` runs the database tests without Docker |
 
 There is no workspace tooling: `cd apps/mobile` before running npm or Expo commands.
 
@@ -42,12 +42,12 @@ Checks (the same ones CI runs):
 npm run lint && npm run typecheck && npm test
 ```
 
-Database tests run in CI (`supabase db start && supabase test db`). Locally they need Docker.
+Database tests run in CI on the real Supabase stack (`supabase db start && supabase test db`). Without Docker, `tools/db-check` runs them on PGlite as a fast approximation.
 
 ## Roadmap
 
 - [x] **Phase 0** — skeleton, layered architecture with lint-enforced boundaries, auth layer, CI
-- [ ] **Phase 1** — schema, RLS, RPCs and pgTAP tests
+- [x] **Phase 1** — schema, RLS, RPCs and pgTAP tests
 - [ ] **Phase 2** — map with clustering and report details
 - [ ] **Phase 3** — posting a report with photos
 - [ ] **Phase 4** — sightings
