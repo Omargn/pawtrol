@@ -44,6 +44,24 @@ npm run lint && npm run typecheck && npm test
 
 Database tests run in CI on the real Supabase stack (`supabase db start && supabase test db`). Without Docker, `tools/db-check` runs them on PGlite as a fast approximation.
 
+### Your own Supabase project
+
+Apply the schema with `supabase link --project-ref <ref>` and `supabase db push`, or connect the repo through Supabase's GitHub integration with "Deploy to production" so every push to `main` applies new migrations. The integration only deploys pushes made after it was connected. `seed.sql` is for local and preview databases only: its demo accounts have published passwords.
+
+Then:
+
+```bash
+supabase db advisors --linked                                          # security and performance checks
+supabase gen types typescript --linked > apps/mobile/src/types/database.types.ts
+```
+
+Moderators are granted per environment in the SQL editor, never through a migration:
+
+```sql
+insert into private.user_roles (user_id, role)
+select id, 'moderator' from auth.users where email = 'you@example.com';
+```
+
 ## Roadmap
 
 - [x] **Phase 0** — skeleton, layered architecture with lint-enforced boundaries, auth layer, CI
