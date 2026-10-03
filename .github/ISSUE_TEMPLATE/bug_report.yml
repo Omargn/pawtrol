@@ -1,0 +1,44 @@
+name: Bug report
+description: Something doesn't work as it should.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! **Security problems go through a private advisory instead** (see SECURITY.md).
+        Please leave out personal data: no real addresses, phone numbers or photos of people.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open a report from the map
+        2. Tap "I saw this pet"
+        3. ...
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options: [iOS, Android, Web, Database / backend]
+      multiple: true
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Device, OS and commit
+      placeholder: iPhone 17 simulator, iOS 26, commit abc1234
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or screenshots
+      description: Metro or Xcode output, a screenshot or a screen recording.

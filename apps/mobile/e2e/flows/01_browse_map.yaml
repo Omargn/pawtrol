@@ -1,0 +1,25 @@
+# Browsing as a guest: the map, its filters, the list and a report's page.
+appId: ${APP_ID}
+name: Browse the map and open a report
+tags: [smoke]
+---
+- runFlow: ../subflows/launch.yaml
+- tapOn: Lost
+- tapOn: Show list
+- extendedWaitUntil:
+    visible: Lost
+    timeout: 15000
+- assertNotVisible: No reports in this area. Move the map or change the filters.
+- tapOn: Show map
+- runFlow:
+    file: ../subflows/open_link.yaml
+    env:
+      LINK: pawtrol://report/demo-1
+- extendedWaitUntil:
+    visible: Where
+    timeout: 15000
+- assertVisible: I saw this pet
+- assertVisible: Message Demo neighbor
+- scrollUntilVisible:
+    element: Sightings
+- assertVisible: No sightings yet.

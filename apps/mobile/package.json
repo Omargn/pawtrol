@@ -59,7 +59,8 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
-    "test": "jest"
+    "test": "jest",
+    "e2e": "maestro test -e APP_ID=${APP_ID:-dev.pawtrol.app} e2e/flows"
   },
   "private": true,
   "jest": {

@@ -59,4 +59,4 @@ Each table's pgTAP file covers at least: anonymous user, another signed-in user,
 
 ## Reporting a vulnerability
 
-Please don't open a public issue. Until `SECURITY.md` lands (Phase 7), contact the maintainer privately through GitHub.
+Please don't open a public issue. See [SECURITY.md](../SECURITY.md) for how to report one privately and what's in scope.
