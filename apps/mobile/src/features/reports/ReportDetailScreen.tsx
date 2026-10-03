@@ -1,8 +1,9 @@
 import { router, Stack } from "expo-router";
-import { FlatList, Pressable, ScrollView, Share, StyleSheet, Text, useWindowDimensions, View } from "react-native";
+import { Alert, FlatList, Pressable, ScrollView, Share, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import type { ReportDetail, Sighting } from "@/domain/reports/report";
 import { ApproximateAreaMap, APPROXIMATE_RADIUS_M } from "@/features/reports/ApproximateAreaMap";
 import { reportTitle, speciesLabel, timeAgo } from "@/features/reports/format";
+import { useStartConversation } from "@/hooks/useChat";
 import { useReport, useSightings } from "@/hooks/useReports";
 import { useSession } from "@/hooks/useSession";
 import { useSignedUrls } from "@/hooks/useSignedUrls";
@@ -72,14 +73,7 @@ export function ReportDetailScreen({ id }: { id: string }) {
             </Text>
           ) : null}
           {detail.status === "active" && session?.user.id !== detail.authorId ? (
-            <Button
-              label={detail.kind === "lost" ? "I saw this pet" : "I've seen this pet before"}
-              onPress={() =>
-                session
-                  ? router.push({ pathname: "/sighting/[reportId]", params: { reportId: detail.id } })
-                  : router.push("/sign-in")
-              }
-            />
+            <ReportActions detail={detail} signedIn={session !== null} />
           ) : null}
         </View>
 
@@ -103,6 +97,33 @@ export function ReportDetailScreen({ id }: { id: string }) {
         <SightingsSection reportId={detail.id} />
       </ScrollView>
     </>
+  );
+}
+
+/** What a neighbor can do about someone else's active report. Signing in comes first. */
+function ReportActions({ detail, signedIn }: { detail: ReportDetail; signedIn: boolean }) {
+  const start = useStartConversation();
+
+  const message = () => {
+    if (!signedIn) return router.push("/sign-in");
+    start.mutate(detail.id, {
+      onSuccess: (id) => router.push({ pathname: "/chat/[id]", params: { id } }),
+      onError: (error) => Alert.alert("Couldn't open the chat", error.message),
+    });
+  };
+
+  return (
+    <View style={styles.actions}>
+      <Button
+        label={detail.kind === "lost" ? "I saw this pet" : "I've seen this pet before"}
+        onPress={() =>
+          signedIn
+            ? router.push({ pathname: "/sighting/[reportId]", params: { reportId: detail.id } })
+            : router.push("/sign-in")
+        }
+      />
+      <Button label={`Message ${detail.authorName}`} variant="secondary" onPress={message} busy={start.isPending} />
+    </View>
   );
 }
 
@@ -188,6 +209,7 @@ function shareReport(detail: ReportDetail, title: string) {
 const styles = StyleSheet.create({
   content: { padding: spacing.lg, gap: spacing.xl },
   section: { gap: spacing.sm },
+  actions: { gap: spacing.sm, marginTop: spacing.xs },
   photo: { height: 260, borderRadius: radii.lg },
   note: { padding: spacing.md, borderRadius: radii.md, overflow: "hidden" },
   sighting: { gap: spacing.xs, paddingVertical: spacing.sm, borderTopWidth: StyleSheet.hairlineWidth },

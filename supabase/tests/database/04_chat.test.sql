@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(14);
+select plan(17);
 
 create function pg_temp.login_as(uid uuid) returns void language sql as $$
   select set_config('request.jwt.claims', json_build_object('sub', uid, 'role', 'authenticated')::text, true);
@@ -56,9 +56,28 @@ select throws_ok(
   '23514', null, 'blank messages are rejected'
 );
 
+-- Retries: the client picks the id, and resending it can't duplicate the message.
+select lives_ok(
+  $$ insert into public.messages (id, conversation_id, body)
+     select 'e0000000-0000-0000-0000-000000000001', id, 'Sent with my own id' from ids where name = 'conversation' $$,
+  'the sender may choose the message id'
+);
+select throws_ok(
+  $$ insert into public.messages (id, conversation_id, body)
+     select 'e0000000-0000-0000-0000-000000000001', id, 'Sent with my own id' from ids where name = 'conversation' $$,
+  '23505', null, 'resending the same id is refused instead of duplicated'
+);
+select is(
+  (select count(*)::int from public.messages where id = 'e0000000-0000-0000-0000-000000000001'),
+  1, 'so the message exists once'
+);
+
 select pg_temp.login_as('f0000000-0000-0000-0000-000000000001');
 select is((select count(*)::int from public.conversations), 1, 'the owner sees the conversation');
-select is((select body from public.messages limit 1), 'I think I saw your cat on 5th street', 'and reads the message');
+select is(
+  (select body from public.messages where id <> 'e0000000-0000-0000-0000-000000000001'),
+  'I think I saw your cat on 5th street', 'and reads the message'
+);
 select isnt(
   (select last_message_at from public.conversations limit 1), null,
   'the inbox order is kept up to date'
@@ -75,11 +94,11 @@ select throws_ok(
 select pg_temp.login_anon();
 select throws_ok($$ select * from public.conversations $$, '42501', null, 'anon cannot read conversations');
 
--- Rate limit: 30 messages a minute per sender.
+-- Rate limit: 30 messages a minute per sender (two are already sent above).
 select pg_temp.login_as('f0000000-0000-0000-0000-000000000002');
 select lives_ok(
   $$ insert into public.messages (conversation_id, body)
-     select ids.id, 'msg ' || n from ids, generate_series(1, 29) n where ids.name = 'conversation' $$,
+     select ids.id, 'msg ' || n from ids, generate_series(1, 28) n where ids.name = 'conversation' $$,
   'thirty messages a minute are fine'
 );
 select throws_ok(
