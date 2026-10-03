@@ -10,6 +10,8 @@
  *   is only wired in when it's set.
  * - WITHOUT_APPLE_SIGN_IN=1: strips the Sign in with Apple entitlement, which
  *   free Apple accounts can't sign.
+ * - GOOGLE_MAPS_ANDROID_API_KEY: Android maps render through Google Maps,
+ *   which needs a key; iOS uses Apple Maps and needs none.
  */
 module.exports = ({ config }) => {
   const plugins = [...(config.plugins ?? [])];
@@ -17,6 +19,7 @@ module.exports = ({ config }) => {
   if (process.env.GOOGLE_IOS_URL_SCHEME) {
     plugins.push(["@react-native-google-signin/google-signin", { iosUrlScheme: process.env.GOOGLE_IOS_URL_SCHEME }]);
   }
+  plugins.push(["react-native-maps", { androidGoogleMapsApiKey: process.env.GOOGLE_MAPS_ANDROID_API_KEY }]);
   if (process.env.WITHOUT_APPLE_SIGN_IN === "1") {
     plugins.push("./plugins/withoutAppleSignInEntitlement.js");
   }
