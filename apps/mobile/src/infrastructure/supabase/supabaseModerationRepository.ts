@@ -6,12 +6,15 @@ import {
   type FlaggedContent,
   type FlagReason,
   type FlagTargetType,
+  type ModeratedItem,
   type ModerationRepository,
   type OpenFlag,
 } from "@/domain/moderation/moderation";
 
 /** A day's worth of flags for a small team; older ones wait for the next load. */
 const QUEUE_FLAG_LIMIT = 200;
+/** How far back "recently moderated" reaches, in log entries. */
+const RECENT_EVENT_LIMIT = 100;
 
 export function createSupabaseModerationRepository(client: SupabaseClient<Database>): ModerationRepository {
   /**
@@ -36,6 +39,16 @@ export function createSupabaseModerationRepository(client: SupabaseClient<Databa
       for (const row of data) found.set(row.id, { status: row.status, text: row.body, reportId: null });
     }
     return found;
+  }
+
+  async function loadAll(targets: { targetType: FlagTargetType; targetId: string }[]) {
+    const idsOf = (type: FlagTargetType) => targets.filter((target) => target.targetType === type).map((target) => target.targetId);
+    const [report, sighting, message] = await Promise.all([
+      loadContent("report", idsOf("report")),
+      loadContent("sighting", idsOf("sighting")),
+      loadContent("message", idsOf("message")),
+    ]);
+    return { report, sighting, message };
   }
 
   return {
@@ -75,14 +88,34 @@ export function createSupabaseModerationRepository(client: SupabaseClient<Databa
           }),
         ),
       );
-      const idsOf = (type: FlagTargetType) => groups.filter((group) => group.targetType === type).map((group) => group.targetId);
-      const [reports, sightings, messages] = await Promise.all([
-        loadContent("report", idsOf("report")),
-        loadContent("sighting", idsOf("sighting")),
-        loadContent("message", idsOf("message")),
-      ]);
-      const content = { report: reports, sighting: sightings, message: messages };
+      const content = await loadAll(groups);
       return groups.map((group) => ({ ...group, content: content[group.targetType].get(group.targetId) ?? null }));
+    },
+
+    async listRecentlyModerated() {
+      const { data, error } = await client
+        .from("moderation_events")
+        .select("target_type, target_id, action, created_at")
+        .order("created_at", { ascending: false })
+        .limit(RECENT_EVENT_LIMIT);
+      if (error) throw error;
+
+      // Newest first, so the first event seen per target is its latest.
+      const latest = new Map<string, { targetType: FlagTargetType; targetId: string; action: string; at: string }>();
+      for (const row of data) {
+        const key = `${row.target_type}:${row.target_id}`;
+        if (!latest.has(key)) {
+          latest.set(key, { targetType: row.target_type as FlagTargetType, targetId: row.target_id, action: row.action, at: row.created_at });
+        }
+      }
+      const takenDown = [...latest.values()].filter((event) => event.action !== "restored");
+      const content = await loadAll(takenDown);
+      return takenDown.flatMap((event): ModeratedItem[] => {
+        const found = content[event.targetType].get(event.targetId);
+        // Restored some other way since (a report renewed, say) or gone: nothing to undo here.
+        if (!found || (found.status !== "hidden" && found.status !== "removed")) return [];
+        return [{ ...event, action: event.action as ModeratedItem["action"], content: found }];
+      });
     },
 
     async moderate(targetType, targetId, action, reason) {

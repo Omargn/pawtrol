@@ -42,6 +42,16 @@ export type QueueItem = {
   content: FlaggedContent | null;
 };
 
+/** Something a moderator (or auto-hide) took down that's still down: where a mistake gets undone. */
+export type ModeratedItem = {
+  targetType: FlagTargetType;
+  targetId: string;
+  /** The latest moderation event on it. */
+  action: "auto_hidden" | "hidden" | "removed";
+  at: string;
+  content: FlaggedContent;
+};
+
 /**
  * Flagging and moderating. Reads reject with the underlying error; writes
  * reject with a WriteError.
@@ -53,6 +63,8 @@ export type ModerationRepository = {
   isModerator(): Promise<boolean>;
   /** Targets with open flags, longest-waiting first, capped. Moderators only. */
   listQueue(): Promise<QueueItem[]>;
+  /** Content whose latest moderation took it down and that's still down, newest first, capped. Moderators only. */
+  listRecentlyModerated(): Promise<ModeratedItem[]>;
   /** Applies a moderation action and resolves to the target's new status. */
   moderate(targetType: FlagTargetType, targetId: string, action: ModerationAction, reason: string | null): Promise<string>;
 };

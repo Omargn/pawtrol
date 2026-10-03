@@ -53,6 +53,7 @@ it("moderates, then refreshes the queue and the content", async () => {
   expect(status).toBe("hidden");
   expect(fake.actions).toEqual([{ targetId: "m1", action: "hide" }]);
   expect(invalidate).toHaveBeenCalledWith({ queryKey: moderationKeys.queue() });
+  expect(invalidate).toHaveBeenCalledWith({ queryKey: moderationKeys.recent() });
   expect(invalidate).toHaveBeenCalledWith({ queryKey: ["messages"] });
 });
 

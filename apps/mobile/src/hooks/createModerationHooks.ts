@@ -8,6 +8,7 @@ export const moderationKeys = {
   /** Per user, so signing in as someone else never reuses the answer. */
   role: (userId: string) => ["moderation", "role", userId] as const,
   queue: () => ["moderation", "queue"] as const,
+  recent: () => ["moderation", "recent"] as const,
 };
 
 /** A status change can hide or restore content anywhere it's shown. */
@@ -45,6 +46,10 @@ export function createModerationHooks(repository: ModerationRepository) {
     return useQuery({ queryKey: moderationKeys.queue(), queryFn: () => repository.listQueue(), enabled });
   }
 
+  function useRecentlyModerated(enabled: boolean) {
+    return useQuery({ queryKey: moderationKeys.recent(), queryFn: () => repository.listRecentlyModerated(), enabled });
+  }
+
   /** Rejects with a WriteError. */
   function useModerate() {
     const queryClient = useQueryClient();
@@ -54,10 +59,11 @@ export function createModerationHooks(repository: ModerationRepository) {
       onSuccess: (_, input) =>
         Promise.all([
           queryClient.invalidateQueries({ queryKey: moderationKeys.queue() }),
+          queryClient.invalidateQueries({ queryKey: moderationKeys.recent() }),
           refreshContent(queryClient, input.targetType),
         ]),
     });
   }
 
-  return { useIsModerator, useFlagContent, useModerationQueue, useModerate };
+  return { useIsModerator, useFlagContent, useModerationQueue, useRecentlyModerated, useModerate };
 }

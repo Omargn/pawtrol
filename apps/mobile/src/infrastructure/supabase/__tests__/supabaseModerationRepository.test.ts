@@ -36,6 +36,41 @@ describe("listQueue", () => {
   });
 });
 
+describe("listRecentlyModerated", () => {
+  it("keeps targets whose latest event took them down and that are still down", async () => {
+    const events = makeQueryBuilder({
+      data: [
+        { target_type: "report", target_id: "r1", action: "hidden", created_at: "2026-10-02T12:00:00Z" },
+        { target_type: "report", target_id: "r2", action: "restored", created_at: "2026-10-02T11:00:00Z" },
+        { target_type: "report", target_id: "r2", action: "hidden", created_at: "2026-10-02T10:00:00Z" },
+        { target_type: "report", target_id: "r3", action: "auto_hidden", created_at: "2026-10-02T09:00:00Z" },
+        { target_type: "report", target_id: "r1", action: "auto_hidden", created_at: "2026-10-02T08:00:00Z" },
+      ],
+      error: null,
+    });
+    // r3 was renewed back into view since, so there's nothing to undo.
+    const reports = makeQueryBuilder({
+      data: [
+        { id: "r1", status: "hidden", description: "Free puppies" },
+        { id: "r3", status: "active", description: "Back up" },
+      ],
+      error: null,
+    });
+    const { repository } = setup({ moderation_events: events, pet_reports: reports });
+
+    const recent = await repository.listRecentlyModerated();
+
+    expect(events.order).toHaveBeenCalledWith("created_at", { ascending: false });
+    expect(reports.in).toHaveBeenCalledWith("id", ["r1", "r3"]);
+    expect(recent).toEqual([
+      {
+        targetType: "report", targetId: "r1", action: "hidden", at: "2026-10-02T12:00:00Z",
+        content: { status: "hidden", text: "Free puppies", reportId: "r1" },
+      },
+    ]);
+  });
+});
+
 describe("writes", () => {
   it("flags and moderates through the RPCs", async () => {
     const { client, repository } = setup({}, { data: "hidden", error: null });
