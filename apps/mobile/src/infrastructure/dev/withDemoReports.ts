@@ -89,5 +89,8 @@ export function withDemoReports(repository: ReportRepository, now = Date.now()):
       if (reportId.startsWith(DEMO_ID_PREFIX)) return [];
       return repository.listSightings(reportId);
     },
+
+    // Posting always goes to the real backend; demo data is read-only.
+    createReport: (report) => repository.createReport(report),
   };
 }

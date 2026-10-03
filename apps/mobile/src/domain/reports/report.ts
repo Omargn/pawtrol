@@ -56,7 +56,26 @@ export type Bbox = { minLng: number; minLat: number; maxLng: number; maxLat: num
 /** null means "no filter" for that dimension. */
 export type ReportFilters = { kinds: ReportKind[] | null; speciesIds: number[] | null };
 
-/** Reads every report screen needs. Rejects with the underlying error when a read fails. */
+/** What posting a report sends. `location` is exact; the server only ever publishes it snapped. */
+export type NewReport = {
+  /** Generated once per draft so a retried submission can't create a duplicate. */
+  clientId: string;
+  kind: ReportKind;
+  speciesId: number;
+  description: string;
+  lastSeenAt: string;
+  location: { latitude: number; longitude: number };
+  petName: string | null;
+  color: string | null;
+  size: PetSize | null;
+  /** Storage paths of photos already uploaded to the caller's folder. */
+  photoPaths: string[];
+};
+
+/**
+ * Reads every report screen needs, and posting. Reads reject with the
+ * underlying error; writes reject with a WriteError carrying safe copy.
+ */
 export type ReportRepository = {
   /** Active reports inside `bbox`, newest first, capped by the server. */
   listInBbox(bbox: Bbox, filters: ReportFilters): Promise<MapReport[]>;
@@ -64,4 +83,6 @@ export type ReportRepository = {
   getReport(id: string): Promise<ReportDetail | null>;
   /** Visible sightings, newest first. */
   listSightings(reportId: string): Promise<Sighting[]>;
+  /** Publishes a report and returns its id. Idempotent on `clientId`. */
+  createReport(report: NewReport): Promise<string>;
 };

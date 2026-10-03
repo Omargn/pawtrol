@@ -21,7 +21,8 @@ export default function RootLayout() {
         >
           <Stack>
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="report/[id]" options={{ title: "", headerBackTitle: "Map" }} />
+            <Stack.Screen name="report/[id]" options={{ title: "", headerBackTitle: "Back" }} />
+            <Stack.Screen name="sign-in" options={{ title: "Sign in", presentation: "modal" }} />
           </Stack>
         </ThemeProvider>
       </LocationProvider>

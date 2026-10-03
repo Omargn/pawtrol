@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database.types";
+import { toWriteError } from "@/domain/errors/writeError";
 import type {
   MapReport,
   PetSize,
@@ -108,6 +109,24 @@ export function createSupabaseReportRepository(client: SupabaseClient<Database>)
           authorName: row.author?.display_name ?? "",
         }),
       );
+    },
+
+    async createReport(report) {
+      const { data, error } = await client.rpc("create_report", {
+        p_client_id: report.clientId,
+        p_kind: report.kind,
+        p_species_id: report.speciesId,
+        p_description: report.description,
+        p_last_seen_at: report.lastSeenAt,
+        p_lng: report.location.longitude,
+        p_lat: report.location.latitude,
+        p_pet_name: report.petName ?? undefined,
+        p_color: report.color ?? undefined,
+        p_size: report.size ?? undefined,
+        p_photo_paths: report.photoPaths,
+      });
+      if (error) throw toWriteError(error);
+      return data;
     },
   };
 }

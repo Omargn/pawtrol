@@ -42,6 +42,16 @@ const layerZones = [
     from: "./src/composition",
     message: "Screens use hooks; hooks bind composition.",
   },
+  {
+    target: "./src/hooks",
+    from: ["./src/features", "./src/app"],
+    message: "Features use hooks, not the other way round: move shared logic into hooks or domain.",
+  },
+  {
+    target: "./src/ui",
+    from: ["./src/features", "./src/app", "./src/hooks"],
+    message: "ui holds tokens and primitives; it depends on nothing above it.",
+  },
 ];
 
 module.exports = defineConfig([

@@ -1,4 +1,4 @@
-import type { MapReport, ReportDetail, ReportRepository, Sighting } from "@/domain/reports/report";
+import type { MapReport, NewReport, ReportDetail, ReportRepository, Sighting } from "@/domain/reports/report";
 
 export function makeMapReport(overrides: Partial<MapReport> = {}): MapReport {
   return {
@@ -35,14 +35,20 @@ export function makeReportDetail(overrides: Partial<ReportDetail> = {}): ReportD
   };
 }
 
-/** A ReportRepository over plain arrays, filtering like the server does. `calls` counts requests per method. */
+/**
+ * A ReportRepository over plain arrays, filtering like the server does.
+ * `calls` counts requests per method; `created` holds what was posted, keyed
+ * by clientId as the server's idempotency is.
+ */
 export function createInMemoryReportRepository({
   reports = [] as MapReport[],
   details = [] as ReportDetail[],
   sightings = {} as Record<string, Sighting[]>,
   failWith,
 }: { reports?: MapReport[]; details?: ReportDetail[]; sightings?: Record<string, Sighting[]>; failWith?: Error } = {}) {
-  const calls = { listInBbox: 0, getReport: 0, listSightings: 0 };
+  const calls = { listInBbox: 0, getReport: 0, listSightings: 0, createReport: 0 };
+  const created = new Map<string, { id: string; report: NewReport }>();
+  let failCreateWith = failWith;
 
   const repository: ReportRepository = {
     async listInBbox(bbox, filters) {
@@ -68,7 +74,24 @@ export function createInMemoryReportRepository({
       if (failWith) throw failWith;
       return sightings[reportId] ?? [];
     },
+    async createReport(report) {
+      calls.createReport++;
+      if (failCreateWith) throw failCreateWith;
+      const existing = created.get(report.clientId);
+      if (existing) return existing.id;
+      const id = `created-${created.size + 1}`;
+      created.set(report.clientId, { id, report });
+      return id;
+    },
   };
 
-  return { repository, calls };
+  return {
+    repository,
+    calls,
+    created,
+    /** Makes the next createReport calls fail (or succeed again with undefined). */
+    failCreate(error: Error | undefined) {
+      failCreateWith = error;
+    },
+  };
 }
