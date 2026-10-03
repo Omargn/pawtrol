@@ -1,5 +1,5 @@
-import { Placeholder } from "@/ui/Placeholder";
+import { MapScreen } from "@/features/map/MapScreen";
 
-export default function MapScreen() {
-  return <Placeholder title="Map" description="Lost and found pets near you will show up here." />;
+export default function MapRoute() {
+  return <MapScreen />;
 }

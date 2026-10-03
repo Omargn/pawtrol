@@ -52,7 +52,8 @@ Each table's pgTAP file covers at least: anonymous user, another signed-in user,
 ## Client rules
 
 - The session is stored in the device keychain/keystore ([ADR 0003](adr/0003-session-storage.md)).
-- The user's own location is never sent to the server except as a location they deliberately chose for a report or sighting.
+- The user's own location is never sent to the server except as a location they deliberately chose for a report or sighting. The map asks for the *visible area*, snapped outward to a grid a quarter of its size, not for the device position.
+- Photos are fetched through short-lived signed URLs and cached on the device by storage path, so a re-signed URL never re-downloads a photo.
 - Analytics events never carry precise coordinates.
 
 ## Reporting a vulnerability

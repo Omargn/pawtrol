@@ -34,11 +34,19 @@
           "backgroundColor": "#FFF4EA",
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76,
-          "dark": { "backgroundColor": "#17120E" }
+          "dark": {
+            "backgroundColor": "#17120E"
+          }
         }
       ],
       "expo-secure-store",
-      "expo-apple-authentication"
+      "expo-apple-authentication",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Pawtrol uses your location to show lost and found pets near you. It never leaves your device."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

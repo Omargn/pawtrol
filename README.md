@@ -2,7 +2,7 @@
 
 Lost and found pets on a map. Post a pet you lost or found, see reports near you, add a sighting ("I saw this dog here at 6 pm"), and message the owner without either side sharing a phone number or an email.
 
-> **Status:** early development. The backend schema is in place; the app screens come next. See the [roadmap](#roadmap).
+> **Status:** early development. You can browse reports on a map; posting comes next. See the [roadmap](#roadmap).
 
 ## Why it's built the way it is
 
@@ -33,6 +33,7 @@ Requirements: Node 22+, Xcode (iOS) or Android Studio, a Supabase project.
 cd apps/mobile
 npm install
 cp .env.example .env   # then fill in your Supabase URL and publishable key
+                       # EXPO_PUBLIC_DEMO_DATA=1 adds demo reports in Mexico City
 npx expo run:ios       # a development build; Expo Go lacks the native modules
 ```
 
@@ -66,7 +67,7 @@ select id, 'moderator' from auth.users where email = 'you@example.com';
 
 - [x] **Phase 0** — skeleton, layered architecture with lint-enforced boundaries, auth layer, CI
 - [x] **Phase 1** — schema, RLS, RPCs and pgTAP tests
-- [ ] **Phase 2** — map with clustering and report details
+- [x] **Phase 2** — map with clustering, list, filters and report details
 - [ ] **Phase 3** — posting a report with photos
 - [ ] **Phase 4** — sightings
 - [ ] **Phase 5** — in-app chat

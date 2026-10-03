@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from "expo-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { LocationProvider } from "@/hooks/useUserLocation";
 import { useTheme } from "@/ui/useTheme";
 
 export default function RootLayout() {
@@ -11,14 +12,19 @@ export default function RootLayout() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider
-        value={{
-          ...base,
-          colors: { ...base.colors, background: colors.background, card: colors.surface, primary: colors.accent },
-        }}
-      >
-        <Stack screenOptions={{ headerShown: false }} />
-      </ThemeProvider>
+      <LocationProvider>
+        <ThemeProvider
+          value={{
+            ...base,
+            colors: { ...base.colors, background: colors.background, card: colors.surface, primary: colors.accent },
+          }}
+        >
+          <Stack>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="report/[id]" options={{ title: "", headerBackTitle: "Map" }} />
+          </Stack>
+        </ThemeProvider>
+      </LocationProvider>
     </QueryClientProvider>
   );
 }
