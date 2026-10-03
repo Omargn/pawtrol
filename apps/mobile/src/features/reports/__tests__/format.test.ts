@@ -1,4 +1,4 @@
-import { reportTitle, timeAgo } from "@/features/reports/format";
+import { myReportStatus, reportTitle, timeAgo } from "@/features/reports/format";
 
 const now = Date.parse("2026-10-02T12:00:00Z");
 const ago = (ms: number) => new Date(now - ms).toISOString();
@@ -31,4 +31,21 @@ it("titles a report by its pet's name, or by what was found", () => {
   expect(reportTitle({ petName: null, kind: "found", speciesId: 1 }, species)).toBe("Found dog");
   expect(reportTitle({ petName: null, kind: "found", speciesId: 99 }, species)).toBe("Found pet");
   expect(reportTitle({ petName: null, kind: "lost", speciesId: 42 }, undefined)).toBe("Lost pet");
+});
+
+describe("myReportStatus", () => {
+  it("counts down an active report's days on the map", () => {
+    expect(myReportStatus({ status: "active", expiresAt: "2026-10-12T12:00:00Z" }, now)).toBe(
+      "On the map · expires in 10 days",
+    );
+    expect(myReportStatus({ status: "active", expiresAt: "2026-10-03T08:00:00Z" }, now)).toBe(
+      "On the map · expires tomorrow",
+    );
+    expect(myReportStatus({ status: "active", expiresAt: "2026-10-02T11:00:00Z" }, now)).toBe("Expiring now");
+  });
+
+  it("explains every other status", () => {
+    expect(myReportStatus({ status: "expired", expiresAt: "2026-10-01T12:00:00Z" }, now)).toMatch(/renew/);
+    expect(myReportStatus({ status: "hidden", expiresAt: "2026-10-12T12:00:00Z" }, now)).toMatch(/moderators/);
+  });
 });

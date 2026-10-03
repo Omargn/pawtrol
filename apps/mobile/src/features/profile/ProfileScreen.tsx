@@ -1,6 +1,8 @@
 import { router } from "expo-router";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { MyReports } from "@/features/profile/MyReports";
 import { useAuth } from "@/hooks/useAuth";
+import { useIsModerator } from "@/hooks/useModeration";
 import { useSession } from "@/hooks/useSession";
 import { Button } from "@/ui/Button";
 import { ScreenLoading, ScreenMessage } from "@/ui/ScreenState";
@@ -11,6 +13,7 @@ export function ProfileScreen() {
   const { colors } = useTheme();
   const { session, loading } = useSession();
   const { signOut } = useAuth();
+  const isModerator = useIsModerator(session?.user.id ?? null);
 
   if (loading) return <ScreenLoading />;
   if (!session) {
@@ -43,6 +46,10 @@ export function ProfileScreen() {
           Only your display name is shown to others. Your email stays private.
         </Text>
       </View>
+      <MyReports userId={user.id} />
+      {isModerator ? (
+        <Button label="Moderation queue" variant="secondary" onPress={() => router.push("/moderation")} />
+      ) : null}
       <Button label="Sign out" variant="secondary" onPress={signOut} />
     </ScrollView>
   );

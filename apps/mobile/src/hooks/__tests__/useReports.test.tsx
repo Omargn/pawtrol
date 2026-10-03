@@ -1,6 +1,7 @@
-import { renderHook, waitFor } from "@testing-library/react-native";
+import { QueryClient } from "@tanstack/react-query";
+import { act, renderHook, waitFor } from "@testing-library/react-native";
 import type { Bbox, ReportFilters } from "@/domain/reports/report";
-import { createReportHooks } from "@/hooks/createReportHooks";
+import { createReportHooks, reportKeys } from "@/hooks/createReportHooks";
 import { createInMemoryReportRepository, makeMapReport, makeReportDetail } from "@/test-utils/inMemoryReportRepository";
 import { createQueryWrapper } from "@/test-utils/queryWrapper";
 
@@ -93,5 +94,60 @@ describe("useReport", () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data).toBeNull();
+  });
+});
+
+describe("your own reports", () => {
+  function ownSetup() {
+    const fake = createInMemoryReportRepository({
+      details: [
+        makeReportDetail({ id: "mine", authorId: "me", status: "expired" }),
+        makeReportDetail({ id: "theirs", authorId: "someone" }),
+      ],
+    });
+    const hooks = createReportHooks(fake.repository);
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 }, mutations: { gcTime: 0 } } });
+    return { fake, hooks, queryClient, wrapper: createQueryWrapper(queryClient) };
+  }
+
+  it("lists only the signed-in user's reports, and nothing while signed out", async () => {
+    const { hooks, wrapper } = ownSetup();
+    const { result, rerender } = await renderHook(({ userId }: { userId: string | null }) => hooks.useMyReports(userId), {
+      wrapper,
+      initialProps: { userId: null },
+    });
+    expect(result.current.fetchStatus).toBe("idle");
+
+    await rerender({ userId: "me" });
+    await waitFor(() => expect(result.current.data?.map((report) => report.id)).toEqual(["mine"]));
+  });
+
+  it("renews and closes a report, refreshing every report query", async () => {
+    const { fake, hooks, wrapper, queryClient } = ownSetup();
+    const invalidate = jest.spyOn(queryClient, "invalidateQueries");
+    const { result } = await renderHook(() => hooks.useReportStatusActions(), { wrapper });
+
+    await act(async () => {
+      await result.current.renew.mutateAsync("mine");
+    });
+    expect((await fake.repository.getReport("mine"))?.status).toBe("active");
+
+    await act(async () => {
+      await result.current.markReunited.mutateAsync("mine");
+    });
+    expect((await fake.repository.getReport("mine"))?.status).toBe("reunited");
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: reportKeys.all });
+  });
+
+  it("can't renew a report that's already closed", async () => {
+    const { hooks, wrapper } = ownSetup();
+    const { result } = await renderHook(() => hooks.useReportStatusActions(), { wrapper });
+
+    await act(async () => {
+      await result.current.markReunited.mutateAsync("mine");
+    });
+    await act(async () => {
+      await expect(result.current.renew.mutateAsync("mine")).rejects.toMatchObject({ code: "not_allowed" });
+    });
   });
 });

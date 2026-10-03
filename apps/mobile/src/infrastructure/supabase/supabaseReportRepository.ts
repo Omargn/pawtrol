@@ -3,6 +3,7 @@ import type { Database } from "@/types/database.types";
 import { toWriteError } from "@/domain/errors/writeError";
 import type {
   MapReport,
+  MyReport,
   PetSize,
   ReportDetail,
   ReportKind,
@@ -14,6 +15,7 @@ import type {
 /** More than a phone screen can show legibly even clustered; the server caps at 500. */
 const MAP_ROW_LIMIT = 300;
 const SIGHTING_LIMIT = 100;
+const MY_REPORTS_LIMIT = 100;
 
 // Named columns are required, not a style choice: the exact `location` column
 // isn't granted, so `select=*` is refused.
@@ -25,8 +27,14 @@ const DETAIL_COLUMNS = `
 `;
 
 const SIGHTING_COLUMNS = `
-  id, seen_at, note, photo_path, public_lng, public_lat,
+  id, seen_at, note, photo_path, public_lng, public_lat, created_by,
   author:profiles!sightings_created_by_fkey ( display_name )
+`;
+
+// The cover is the first photo, embedded and limited to one in the same request.
+const MY_REPORT_COLUMNS = `
+  id, kind, status, species_id, pet_name, public_lng, public_lat, last_seen_at, sighting_count, expires_at,
+  photos:report_photos ( storage_path )
 `;
 
 // The generated types widen check-constrained columns to `string` and
@@ -107,6 +115,7 @@ export function createSupabaseReportRepository(client: SupabaseClient<Database>)
           note: row.note,
           photoPath: row.photo_path,
           location: location(row.public_lng, row.public_lat),
+          authorId: row.created_by,
           authorName: row.author?.display_name ?? "",
         }),
       );
@@ -126,6 +135,45 @@ export function createSupabaseReportRepository(client: SupabaseClient<Database>)
         p_size: report.size ?? undefined,
         p_photo_paths: report.photoPaths,
       });
+      if (error) throw toWriteError(error);
+      return data;
+    },
+
+    async listMine(userId) {
+      // RLS lets an author read every status of their own reports; the filter
+      // keeps out everyone else's public ones.
+      const { data, error } = await client
+        .from("pet_reports")
+        .select(MY_REPORT_COLUMNS)
+        .eq("created_by", userId)
+        .order("created_at", { ascending: false })
+        .order("position", { referencedTable: "report_photos" })
+        .limit(1, { referencedTable: "report_photos" })
+        .limit(MY_REPORTS_LIMIT);
+      if (error) throw error;
+      return data.map(
+        (row): MyReport => ({
+          id: row.id,
+          kind: asKind(row.kind),
+          status: row.status as ReportStatus,
+          speciesId: row.species_id,
+          petName: row.pet_name,
+          location: location(row.public_lng, row.public_lat),
+          lastSeenAt: row.last_seen_at,
+          sightingCount: row.sighting_count,
+          coverPhotoPath: row.photos[0]?.storage_path ?? null,
+          expiresAt: row.expires_at,
+        }),
+      );
+    },
+
+    async markReunited(reportId) {
+      const { error } = await client.rpc("mark_reunited", { p_report_id: reportId });
+      if (error) throw toWriteError(error);
+    },
+
+    async renewReport(reportId) {
+      const { data, error } = await client.rpc("renew_report", { p_report_id: reportId });
       if (error) throw toWriteError(error);
       return data;
     },

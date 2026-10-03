@@ -1,4 +1,4 @@
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { snapBbox } from "@/domain/reports/bbox";
 import type { Bbox, ReportFilters, ReportRepository } from "@/domain/reports/report";
 
@@ -11,6 +11,7 @@ export const reportKeys = {
   all: ["reports"] as const,
   bbox: (bbox: Bbox, filters: ReportFilters) => ["reports", "bbox", bbox, filters] as const,
   detail: (id: string) => ["reports", "detail", id] as const,
+  mine: (userId: string) => ["reports", "mine", userId] as const,
   sightings: (reportId: string) => ["sightings", reportId] as const,
 };
 
@@ -48,5 +49,28 @@ export function createReportHooks(repository: ReportRepository) {
     });
   }
 
-  return { useReportsInBbox, useReport, useSightings };
+  /** The signed-in user's own reports, every status. */
+  function useMyReports(userId: string | null) {
+    return useQuery({
+      queryKey: reportKeys.mine(userId ?? "none"),
+      queryFn: () => repository.listMine(userId!),
+      enabled: userId !== null,
+      staleTime: 30_000,
+    });
+  }
+
+  /**
+   * The author closing or renewing their report. Either changes what the map,
+   * the report's page and "my reports" show, so every report query refreshes.
+   * Rejects with a WriteError.
+   */
+  function useReportStatusActions() {
+    const queryClient = useQueryClient();
+    const refresh = () => queryClient.invalidateQueries({ queryKey: reportKeys.all });
+    const markReunited = useMutation({ mutationFn: (id: string) => repository.markReunited(id), onSuccess: refresh });
+    const renew = useMutation({ mutationFn: (id: string) => repository.renewReport(id), onSuccess: refresh });
+    return { markReunited, renew };
+  }
+
+  return { useReportsInBbox, useReport, useSightings, useMyReports, useReportStatusActions };
 }

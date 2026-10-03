@@ -1,0 +1,4 @@
+import { moderationRepository } from "@/composition/moderationRepository";
+import { createModerationHooks } from "@/hooks/createModerationHooks";
+
+export const { useIsModerator, useFlagContent, useModerationQueue, useModerate } = createModerationHooks(moderationRepository);

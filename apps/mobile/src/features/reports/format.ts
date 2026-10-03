@@ -1,4 +1,4 @@
-import type { MapReport } from "@/domain/reports/report";
+import type { MapReport, MyReport } from "@/domain/reports/report";
 import type { Species } from "@/domain/species/species";
 import { KIND_LABEL } from "@/ui/KindBadge";
 
@@ -27,4 +27,23 @@ export function reportTitle(report: Pick<MapReport, "petName" | "kind" | "specie
   const entry = species?.find((candidate) => candidate.id === report.speciesId);
   const noun = !entry || entry.slug === "other" ? "pet" : entry.label.toLowerCase();
   return `${KIND_LABEL[report.kind]} ${noun}`;
+}
+
+/** Where one of your own reports stands, in a few words. */
+export function myReportStatus(report: Pick<MyReport, "status" | "expiresAt">, now = Date.now()): string {
+  switch (report.status) {
+    case "active": {
+      const days = Math.ceil((Date.parse(report.expiresAt) - now) / DAY);
+      if (days <= 0) return "Expiring now";
+      return `On the map · expires ${days === 1 ? "tomorrow" : `in ${days} days`}`;
+    }
+    case "reunited":
+      return "Reunited";
+    case "expired":
+      return "Expired · renew it to show it again";
+    case "hidden":
+      return "Hidden while moderators review it";
+    case "removed":
+      return "Removed by moderators";
+  }
 }
