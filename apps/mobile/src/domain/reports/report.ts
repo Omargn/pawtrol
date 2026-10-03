@@ -37,6 +37,7 @@ export type ReportDetail = {
   sightingCount: number;
   expiresAt: string;
   createdAt: string;
+  authorId: string;
   /** Display name only: contact happens through in-app chat, never details. */
   authorName: string;
   photos: ReportPhoto[];
@@ -50,6 +51,21 @@ export type Sighting = {
   location: ApproximateLocation;
   authorName: string;
 };
+
+/** What adding a sighting sends. `location` is exact; the server only ever publishes it snapped. */
+export type NewSighting = {
+  /** Generated once per draft so a retried submission can't create a duplicate. */
+  clientId: string;
+  reportId: string;
+  seenAt: string;
+  location: { latitude: number; longitude: number };
+  note: string | null;
+  /** Storage path of a photo already uploaded to the caller's folder. */
+  photoPath: string | null;
+};
+
+/** The server refuses reports and sightings seen longer ago than this. */
+export const SEEN_MAX_AGE_DAYS = 90;
 
 export type Bbox = { minLng: number; minLat: number; maxLng: number; maxLat: number };
 
@@ -73,7 +89,7 @@ export type NewReport = {
 };
 
 /**
- * Reads every report screen needs, and posting. Reads reject with the
+ * Reads every report screen needs, posting, and adding sightings. Reads reject with the
  * underlying error; writes reject with a WriteError carrying safe copy.
  */
 export type ReportRepository = {
@@ -85,4 +101,6 @@ export type ReportRepository = {
   listSightings(reportId: string): Promise<Sighting[]>;
   /** Publishes a report and returns its id. Idempotent on `clientId`. */
   createReport(report: NewReport): Promise<string>;
+  /** Adds a sighting to an active report and returns its id. Idempotent on `clientId`. */
+  addSighting(sighting: NewSighting): Promise<string>;
 };

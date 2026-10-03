@@ -19,7 +19,7 @@ const SIGHTING_LIMIT = 100;
 // isn't granted, so `select=*` is refused.
 const DETAIL_COLUMNS = `
   id, kind, status, species_id, pet_name, description, color, size, last_seen_at,
-  public_lng, public_lat, sighting_count, expires_at, created_at,
+  public_lng, public_lat, sighting_count, expires_at, created_at, created_by,
   author:profiles!pet_reports_created_by_fkey ( display_name ),
   photos:report_photos ( id, storage_path, position )
 `;
@@ -84,6 +84,7 @@ export function createSupabaseReportRepository(client: SupabaseClient<Database>)
         sightingCount: data.sighting_count,
         expiresAt: data.expires_at,
         createdAt: data.created_at,
+        authorId: data.created_by,
         authorName: data.author?.display_name ?? "",
         photos: data.photos.map((photo) => ({ id: photo.id, path: photo.storage_path })),
       } satisfies ReportDetail;
@@ -124,6 +125,20 @@ export function createSupabaseReportRepository(client: SupabaseClient<Database>)
         p_color: report.color ?? undefined,
         p_size: report.size ?? undefined,
         p_photo_paths: report.photoPaths,
+      });
+      if (error) throw toWriteError(error);
+      return data;
+    },
+
+    async addSighting(sighting) {
+      const { data, error } = await client.rpc("add_sighting", {
+        p_client_id: sighting.clientId,
+        p_report_id: sighting.reportId,
+        p_seen_at: sighting.seenAt,
+        p_lng: sighting.location.longitude,
+        p_lat: sighting.location.latitude,
+        p_note: sighting.note ?? undefined,
+        p_photo_path: sighting.photoPath ?? undefined,
       });
       if (error) throw toWriteError(error);
       return data;

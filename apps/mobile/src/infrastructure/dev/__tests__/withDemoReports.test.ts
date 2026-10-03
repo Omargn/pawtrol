@@ -52,3 +52,16 @@ it("lets real failures through unchanged", async () => {
 
   await expect(withDemoReports(repository, now).listInBbox(city, { kinds: null, speciesIds: null })).rejects.toBe(failure);
 });
+
+it("refuses sightings on demo reports and passes real ones through", async () => {
+  const { repository, addedSightings } = createInMemoryReportRepository();
+  const demo = withDemoReports(repository, now);
+  const sighting = {
+    clientId: "c1", reportId: `${DEMO_ID_PREFIX}1`, seenAt: "2026-10-02T11:00:00Z",
+    location: { latitude: 19.43, longitude: -99.13 }, note: null, photoPath: null,
+  };
+
+  await expect(demo.addSighting(sighting)).rejects.toMatchObject({ code: "not_found" });
+  await expect(demo.addSighting({ ...sighting, reportId: "real" })).resolves.toBe("sighting-1");
+  expect([...addedSightings.values()].map((added) => added.sighting.reportId)).toEqual(["real"]);
+});

@@ -52,7 +52,7 @@ describe("getReport", () => {
   const row = {
     id: "r1", kind: "found", status: "active", species_id: 2, pet_name: null, description: "Grey cat",
     color: "grey", size: "small", last_seen_at: "2026-10-01T10:00:00Z", public_lng: -99.1, public_lat: 19.4,
-    sighting_count: 0, expires_at: "2026-10-31T10:00:00Z", created_at: "2026-10-01T11:00:00Z",
+    sighting_count: 0, expires_at: "2026-10-31T10:00:00Z", created_at: "2026-10-01T11:00:00Z", created_by: "u1",
     author: { display_name: "Ana" },
     photos: [{ id: "p1", storage_path: "u/a.jpg", position: 0 }],
   };
@@ -70,7 +70,7 @@ describe("getReport", () => {
     expect(builder.eq).toHaveBeenCalledWith("id", "r1");
   });
 
-  it("maps the row, with the author's display name only", async () => {
+  it("maps the row, identifying the author only by id and display name", async () => {
     const { repository } = setup({ from: makeQueryBuilder({ data: row, error: null }) });
 
     await expect(repository.getReport("r1")).resolves.toEqual({
@@ -78,7 +78,7 @@ describe("getReport", () => {
       color: "grey", size: "small", lastSeenAt: "2026-10-01T10:00:00Z",
       location: { longitude: -99.1, latitude: 19.4 }, sightingCount: 0,
       expiresAt: "2026-10-31T10:00:00Z", createdAt: "2026-10-01T11:00:00Z",
-      authorName: "Ana", photos: [{ id: "p1", path: "u/a.jpg" }],
+      authorId: "u1", authorName: "Ana", photos: [{ id: "p1", path: "u/a.jpg" }],
     });
   });
 
@@ -105,5 +105,30 @@ describe("listSightings", () => {
     expect(sightings).toEqual([
       { id: "s1", seenAt: "2026-10-01T12:00:00Z", note: "By the park", photoPath: null, location: { longitude: -99.15, latitude: 19.42 }, authorName: "Ben" },
     ]);
+  });
+});
+
+describe("addSighting", () => {
+  const sighting = {
+    clientId: "c1", reportId: "r1", seenAt: "2026-10-02T10:00:00.000Z",
+    location: { latitude: 19.4321, longitude: -99.1334 }, note: null, photoPath: "u1/f.jpg",
+  };
+
+  it("sends the exact point and leaves out a missing note", async () => {
+    const { client, repository } = setup({ rpc: { data: "s1", error: null } });
+
+    await expect(repository.addSighting(sighting)).resolves.toBe("s1");
+    expect(client.rpc).toHaveBeenCalledWith("add_sighting", {
+      p_client_id: "c1", p_report_id: "r1", p_seen_at: "2026-10-02T10:00:00.000Z",
+      p_lng: -99.1334, p_lat: 19.4321, p_note: undefined, p_photo_path: "u1/f.jpg",
+    });
+  });
+
+  it("rejects with a safe, typed error", async () => {
+    const { repository } = setup({ rpc: { data: null, error: { message: "not_found", code: "P0002" } } });
+
+    await expect(repository.addSighting(sighting)).rejects.toMatchObject({
+      name: "WriteError", code: "not_found", message: "That report isn't available anymore.",
+    });
   });
 });
