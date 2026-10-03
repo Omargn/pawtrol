@@ -1,11 +1,13 @@
-import { Stack } from "expo-router";
+import { router, Stack } from "expo-router";
 import { FlatList, Pressable, ScrollView, Share, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import type { ReportDetail, Sighting } from "@/domain/reports/report";
 import { ApproximateAreaMap, APPROXIMATE_RADIUS_M } from "@/features/reports/ApproximateAreaMap";
 import { reportTitle, speciesLabel, timeAgo } from "@/features/reports/format";
 import { useReport, useSightings } from "@/hooks/useReports";
+import { useSession } from "@/hooks/useSession";
 import { useSignedUrls } from "@/hooks/useSignedUrls";
 import { useSpecies } from "@/hooks/useSpecies";
+import { Button } from "@/ui/Button";
 import { Icon } from "@/ui/Icon";
 import { KindBadge } from "@/ui/KindBadge";
 import { Photo } from "@/ui/Photo";
@@ -24,6 +26,7 @@ export function ReportDetailScreen({ id }: { id: string }) {
   const { colors } = useTheme();
   const report = useReport(id);
   const species = useSpecies();
+  const { session } = useSession();
 
   if (report.isPending) return <ScreenLoading />;
   if (report.isError) {
@@ -67,6 +70,16 @@ export function ReportDetailScreen({ id }: { id: string }) {
             <Text style={[typography.body, styles.note, { backgroundColor: colors.surfaceMuted, color: colors.text }]}>
               {STATUS_NOTE[detail.status]}
             </Text>
+          ) : null}
+          {detail.status === "active" && session?.user.id !== detail.authorId ? (
+            <Button
+              label={detail.kind === "lost" ? "I saw this pet" : "I've seen this pet before"}
+              onPress={() =>
+                session
+                  ? router.push({ pathname: "/sighting/[reportId]", params: { reportId: detail.id } })
+                  : router.push("/sign-in")
+              }
+            />
           ) : null}
         </View>
 
@@ -125,6 +138,8 @@ function Gallery({ detail, title }: { detail: ReportDetail; title: string }) {
 function SightingsSection({ reportId }: { reportId: string }) {
   const { colors } = useTheme();
   const sightings = useSightings(reportId);
+  // One signing request for the whole timeline, not one per row.
+  const urls = useSignedUrls(sightings.data?.flatMap((sighting) => sighting.photoPath ?? []) ?? []);
 
   return (
     <View style={styles.section}>
@@ -138,13 +153,15 @@ function SightingsSection({ reportId }: { reportId: string }) {
       ) : sightings.data.length === 0 ? (
         <Text style={[typography.body, { color: colors.textSecondary }]}>No sightings yet.</Text>
       ) : (
-        sightings.data.map((sighting) => <SightingRow key={sighting.id} sighting={sighting} />)
+        sightings.data.map((sighting) => (
+          <SightingRow key={sighting.id} sighting={sighting} photoUrl={sighting.photoPath ? urls.data?.[sighting.photoPath] : undefined} />
+        ))
       )}
     </View>
   );
 }
 
-function SightingRow({ sighting }: { sighting: Sighting }) {
+function SightingRow({ sighting, photoUrl }: { sighting: Sighting; photoUrl: string | undefined }) {
   const { colors } = useTheme();
   return (
     <View style={[styles.sighting, { borderColor: colors.border }]}>
@@ -155,6 +172,9 @@ function SightingRow({ sighting }: { sighting: Sighting }) {
         <Text selectable style={[typography.body, { color: colors.text }]}>
           {sighting.note}
         </Text>
+      ) : null}
+      {sighting.photoPath ? (
+        <Photo path={sighting.photoPath} url={photoUrl} style={styles.sightingPhoto} accessibilityLabel="Sighting photo" />
       ) : null}
     </View>
   );
@@ -171,4 +191,5 @@ const styles = StyleSheet.create({
   photo: { height: 260, borderRadius: radii.lg },
   note: { padding: spacing.md, borderRadius: radii.md, overflow: "hidden" },
   sighting: { gap: spacing.xs, paddingVertical: spacing.sm, borderTopWidth: StyleSheet.hairlineWidth },
+  sightingPhoto: { width: 160, height: 120, borderRadius: radii.md },
 });

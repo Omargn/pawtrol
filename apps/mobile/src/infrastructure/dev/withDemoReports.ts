@@ -1,3 +1,4 @@
+import { WriteError } from "@/domain/errors/writeError";
 import type { MapReport, ReportDetail, ReportKind, ReportRepository } from "@/domain/reports/report";
 
 /** Ids carry this prefix so a demo report can never collide with, or be mistaken for, a real one. */
@@ -37,6 +38,7 @@ export function makeDemoReports(now: number): ReportDetail[] {
       sightingCount: n % 4,
       expiresAt: new Date(now + 30 * 24 * HOUR - n * 7 * HOUR).toISOString(),
       createdAt: lastSeenAt,
+      authorId: `${DEMO_ID_PREFIX}neighbor`,
       authorName: "Demo neighbor",
       photos: [],
     };
@@ -90,7 +92,12 @@ export function withDemoReports(repository: ReportRepository, now = Date.now()):
       return repository.listSightings(reportId);
     },
 
-    // Posting always goes to the real backend; demo data is read-only.
+    // Writes always go to the real backend; demo data is read-only.
     createReport: (report) => repository.createReport(report),
+
+    async addSighting(sighting) {
+      if (sighting.reportId.startsWith(DEMO_ID_PREFIX)) throw new WriteError("not_found");
+      return repository.addSighting(sighting);
+    },
   };
 }

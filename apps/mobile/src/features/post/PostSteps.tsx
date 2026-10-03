@@ -1,18 +1,15 @@
 import { DateTimePicker } from "@expo/ui/community/datetime-picker";
-import Ionicons from "@expo/vector-icons/Ionicons";
-import { Image } from "expo-image";
 import { useEffect } from "react";
 import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import type { Coordinates } from "@/domain/location/locationService";
 import { MAX_PHOTOS_PER_REPORT } from "@/domain/photos/photos";
-import type { PetSize, ReportKind } from "@/domain/reports/report";
+import { SEEN_MAX_AGE_DAYS, type PetSize, type ReportKind } from "@/domain/reports/report";
 import type { Species } from "@/domain/species/species";
 import { LocationPicker } from "@/features/post/LocationPicker";
 import { timeAgo } from "@/features/reports/format";
 import {
   COLOR_MAX,
   DESCRIPTION_MAX,
-  LAST_SEEN_MAX_AGE_DAYS,
   PET_NAME_MAX,
   type Draft,
   type PostAction,
@@ -21,6 +18,7 @@ import {
 import { Button } from "@/ui/Button";
 import { Chip } from "@/ui/Chip";
 import { KIND_LABEL } from "@/ui/KindBadge";
+import { LocalPhotoThumb } from "@/ui/LocalPhotoThumb";
 import { TextField } from "@/ui/TextField";
 import { radii, spacing, typography } from "@/ui/theme";
 import { useTheme } from "@/ui/useTheme";
@@ -138,7 +136,7 @@ export function DetailsStep({ draft, dispatch, species }: { draft: Draft; dispat
           mode="datetime"
           display="compact"
           maximumDate={now}
-          minimumDate={new Date(now.getTime() - LAST_SEEN_MAX_AGE_DAYS * 86_400_000)}
+          minimumDate={new Date(now.getTime() - SEEN_MAX_AGE_DAYS * 86_400_000)}
           accentColor={colors.accent}
           themeVariant={scheme}
           onValueChange={(_, date) => update({ lastSeenAt: date })}
@@ -202,18 +200,12 @@ export function PhotosStep({
     <View style={styles.stack}>
       <View style={styles.wrap}>
         {draft.photos.map((photo, index) => (
-          <View key={photo.localUri} style={styles.thumbFrame}>
-            <Image source={{ uri: photo.localUri }} style={styles.thumb} contentFit="cover" accessibilityLabel={`Photo ${index + 1}`} />
-            <Pressable
-              onPress={() => dispatch({ type: "removePhoto", localUri: photo.localUri })}
-              accessibilityRole="button"
-              accessibilityLabel={`Remove photo ${index + 1}`}
-              hitSlop={8}
-              style={[styles.remove, { backgroundColor: colors.text }]}
-            >
-              <Ionicons name="close" size={14} color={colors.background} />
-            </Pressable>
-          </View>
+          <LocalPhotoThumb
+            key={photo.localUri}
+            uri={photo.localUri}
+            label={`Photo ${index + 1}`}
+            onRemove={() => dispatch({ type: "removePhoto", localUri: photo.localUri })}
+          />
         ))}
       </View>
       {remaining > 0 ? (
@@ -292,18 +284,6 @@ const styles = StyleSheet.create({
     borderRadius: radii.lg,
     borderCurve: "continuous",
     borderWidth: 1,
-  },
-  thumbFrame: { width: 96, height: 96 },
-  thumb: { width: 96, height: 96, borderRadius: radii.md },
-  remove: {
-    position: "absolute",
-    top: -6,
-    right: -6,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
   },
   summary: { borderRadius: radii.lg, borderWidth: StyleSheet.hairlineWidth, overflow: "hidden" },
   summaryRow: { flexDirection: "row", alignItems: "center", gap: spacing.md, padding: spacing.lg },

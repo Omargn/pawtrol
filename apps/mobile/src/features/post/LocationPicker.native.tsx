@@ -28,7 +28,7 @@ export function LocationPicker({ initial, onChange, color }: LocationPickerProps
         pitchEnabled={false}
         toolbarEnabled={false}
         userInterfaceStyle={scheme}
-        accessibilityLabel="Map. Move it so the pin sits where the pet was last seen."
+        accessibilityLabel="Map. Move it so the pin sits where the pet was seen."
       />
       <View pointerEvents="none" style={styles.pin}>
         <Ionicons name="location-sharp" size={44} color={color} />

@@ -1,4 +1,4 @@
-import type { MapReport, NewReport, ReportDetail, ReportRepository, Sighting } from "@/domain/reports/report";
+import type { MapReport, NewReport, NewSighting, ReportDetail, ReportRepository, Sighting } from "@/domain/reports/report";
 
 export function makeMapReport(overrides: Partial<MapReport> = {}): MapReport {
   return {
@@ -29,6 +29,7 @@ export function makeReportDetail(overrides: Partial<ReportDetail> = {}): ReportD
     sightingCount: 0,
     expiresAt: "2026-10-31T10:00:00Z",
     createdAt: "2026-10-01T11:00:00Z",
+    authorId: "user-ana",
     authorName: "Ana",
     photos: [],
     ...overrides,
@@ -37,8 +38,8 @@ export function makeReportDetail(overrides: Partial<ReportDetail> = {}): ReportD
 
 /**
  * A ReportRepository over plain arrays, filtering like the server does.
- * `calls` counts requests per method; `created` holds what was posted, keyed
- * by clientId as the server's idempotency is.
+ * `calls` counts requests per method; `created` and `addedSightings` hold what
+ * was written, keyed by clientId as the server's idempotency is.
  */
 export function createInMemoryReportRepository({
   reports = [] as MapReport[],
@@ -46,8 +47,9 @@ export function createInMemoryReportRepository({
   sightings = {} as Record<string, Sighting[]>,
   failWith,
 }: { reports?: MapReport[]; details?: ReportDetail[]; sightings?: Record<string, Sighting[]>; failWith?: Error } = {}) {
-  const calls = { listInBbox: 0, getReport: 0, listSightings: 0, createReport: 0 };
+  const calls = { listInBbox: 0, getReport: 0, listSightings: 0, createReport: 0, addSighting: 0 };
   const created = new Map<string, { id: string; report: NewReport }>();
+  const addedSightings = new Map<string, { id: string; sighting: NewSighting }>();
   let failCreateWith = failWith;
 
   const repository: ReportRepository = {
@@ -83,13 +85,23 @@ export function createInMemoryReportRepository({
       created.set(report.clientId, { id, report });
       return id;
     },
+    async addSighting(sighting) {
+      calls.addSighting++;
+      if (failCreateWith) throw failCreateWith;
+      const existing = addedSightings.get(sighting.clientId);
+      if (existing) return existing.id;
+      const id = `sighting-${addedSightings.size + 1}`;
+      addedSightings.set(sighting.clientId, { id, sighting });
+      return id;
+    },
   };
 
   return {
     repository,
     calls,
     created,
-    /** Makes the next createReport calls fail (or succeed again with undefined). */
+    addedSightings,
+    /** Makes the next createReport and addSighting calls fail (or succeed again with undefined). */
     failCreate(error: Error | undefined) {
       failCreateWith = error;
     },

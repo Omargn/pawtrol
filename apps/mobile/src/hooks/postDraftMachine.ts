@@ -1,6 +1,6 @@
 import type { WriteError } from "@/domain/errors/writeError";
 import { MAX_PHOTOS_PER_REPORT } from "@/domain/photos/photos";
-import type { ReportKind } from "@/domain/reports/report";
+import { SEEN_MAX_AGE_DAYS, type ReportKind } from "@/domain/reports/report";
 import type { Draft } from "@/domain/reports/submitReport";
 
 export type { Draft, DraftPhoto } from "@/domain/reports/submitReport";
@@ -34,8 +34,6 @@ export type PostAction =
 export const DESCRIPTION_MAX = 1000;
 export const PET_NAME_MAX = 50;
 export const COLOR_MAX = 40;
-/** The server rejects last-seen times older than this. */
-export const LAST_SEEN_MAX_AGE_DAYS = 90;
 
 export function initialPostState(clientId: string, now: Date): PostState {
   return {
@@ -74,8 +72,8 @@ export function stepIssues(draft: Draft, step: Step, now = new Date()): string[]
       if (draft.petName.trim().length > PET_NAME_MAX) issues.push(`Keep the name under ${PET_NAME_MAX} characters.`);
       if (draft.color.trim().length > COLOR_MAX) issues.push(`Keep the color under ${COLOR_MAX} characters.`);
       if (draft.lastSeenAt.getTime() > now.getTime() + 5 * 60_000) issues.push("The time can't be in the future.");
-      if (draft.lastSeenAt.getTime() < now.getTime() - LAST_SEEN_MAX_AGE_DAYS * 86_400_000) {
-        issues.push(`Reports are for pets seen in the last ${LAST_SEEN_MAX_AGE_DAYS} days.`);
+      if (draft.lastSeenAt.getTime() < now.getTime() - SEEN_MAX_AGE_DAYS * 86_400_000) {
+        issues.push(`Reports are for pets seen in the last ${SEEN_MAX_AGE_DAYS} days.`);
       }
       break;
     }

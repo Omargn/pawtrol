@@ -5,3 +5,6 @@
 node_modules/
 .env
 .env*.local
+
+# Session handover notes (local only).
+/.handover/

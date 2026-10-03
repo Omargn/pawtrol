@@ -1,6 +1,5 @@
 import { toWriteError } from "@/domain/errors/writeError";
-import { photoPath, type MediaStorage } from "@/domain/media/mediaStorage";
-import type { PhotoPreparer } from "@/domain/photos/photos";
+import { uploadPhoto, type UploadDependencies } from "@/domain/photos/uploadPhoto";
 import type { PetSize, ReportKind, ReportRepository } from "@/domain/reports/report";
 
 export type DraftPhoto = {
@@ -24,11 +23,8 @@ export type Draft = {
   photos: DraftPhoto[];
 };
 
-export type SubmitDependencies = {
+export type SubmitDependencies = UploadDependencies & {
   repository: Pick<ReportRepository, "createReport">;
-  storage: Pick<MediaStorage, "upload">;
-  preparer: PhotoPreparer;
-  newFileId: () => string;
 };
 
 /**
@@ -55,9 +51,7 @@ export async function submitReport(
         paths.push(photo.uploadedPath);
         continue;
       }
-      const prepared = await deps.preparer.prepare({ uri: photo.localUri });
-      const path = photoPath(userId, deps.newFileId());
-      await deps.storage.upload(prepared.uri, path);
+      const path = await uploadPhoto(photo.localUri, userId, deps);
       onPhotoUploaded(photo.localUri, path);
       paths.push(path);
     }
