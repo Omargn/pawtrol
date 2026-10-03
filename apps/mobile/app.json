@@ -46,6 +46,14 @@
         {
           "locationWhenInUsePermission": "Pawtrol uses your location to show lost and found pets near you. It never leaves your device."
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Pawtrol uses the camera so you can add photos of a lost or found pet.",
+          "photosPermission": "Pawtrol lets you choose photos of a lost or found pet to add to your report.",
+          "microphonePermission": false
+        }
       ]
     ],
     "experiments": {

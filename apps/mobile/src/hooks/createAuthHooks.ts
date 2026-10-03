@@ -5,7 +5,8 @@ import type { IdentityProvider } from "@/domain/auth/identityProvider";
 
 type AuthDependencies = {
   gateway: AuthGateway;
-  providers: { apple: IdentityProvider; google: IdentityProvider };
+  /** null when that provider isn't configured in this build. */
+  providers: { apple: IdentityProvider | null; google: IdentityProvider | null };
 };
 
 export function createAuthHooks({ gateway, providers }: AuthDependencies) {
@@ -14,7 +15,8 @@ export function createAuthHooks({ gateway, providers }: AuthDependencies) {
    * nor a failure, so it answers false without alerting: the caller leaves the login step open
    * instead of closing it out from under someone who only backed out of Apple's or Google's sheet.
    */
-  async function signInWith(provider: IdentityProvider) {
+  async function signInWith(provider: IdentityProvider | null) {
+    if (!provider) return false;
     const credential = await provider.requestCredential();
     if (!credential) return false;
     await gateway.signInWithIdToken(credential.provider, credential.idToken);
@@ -76,7 +78,15 @@ export function createAuthHooks({ gateway, providers }: AuthDependencies) {
 
     const signOut = useCallback(() => gateway.signOut(), []);
 
-    return { signInWithApple, signInWithGoogle, signInWithEmail, signUpWithEmail, signOut };
+    return {
+      signInWithApple,
+      signInWithGoogle,
+      signInWithEmail,
+      signUpWithEmail,
+      signOut,
+      /** Which provider buttons to show. */
+      availableProviders: { apple: providers.apple !== null, google: providers.google !== null },
+    };
   }
 
   return { useAuth };

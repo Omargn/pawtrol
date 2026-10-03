@@ -1,5 +1,5 @@
-import { Placeholder } from "@/ui/Placeholder";
+import { ProfileScreen } from "@/features/profile/ProfileScreen";
 
-export default function ProfileScreen() {
-  return <Placeholder title="Profile" description="Your reports and account." />;
+export default function ProfileRoute() {
+  return <ProfileScreen />;
 }

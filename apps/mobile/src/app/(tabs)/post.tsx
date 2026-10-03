@@ -1,5 +1,5 @@
-import { Placeholder } from "@/ui/Placeholder";
+import { PostScreen } from "@/features/post/PostScreen";
 
-export default function PostScreen() {
-  return <Placeholder title="Post" description="Report a lost or found pet." />;
+export default function PostRoute() {
+  return <PostScreen />;
 }

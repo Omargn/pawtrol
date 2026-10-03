@@ -2,7 +2,7 @@
 
 Lost and found pets on a map. Post a pet you lost or found, see reports near you, add a sighting ("I saw this dog here at 6 pm"), and message the owner without either side sharing a phone number or an email.
 
-> **Status:** early development. You can browse reports on a map; posting comes next. See the [roadmap](#roadmap).
+> **Status:** early development. You can browse reports on a map and post one with photos; sightings come next. See the [roadmap](#roadmap).
 
 ## Why it's built the way it is
 
@@ -68,7 +68,7 @@ select id, 'moderator' from auth.users where email = 'you@example.com';
 - [x] **Phase 0** — skeleton, layered architecture with lint-enforced boundaries, auth layer, CI
 - [x] **Phase 1** — schema, RLS, RPCs and pgTAP tests
 - [x] **Phase 2** — map with clustering, list, filters and report details
-- [ ] **Phase 3** — posting a report with photos
+- [x] **Phase 3** — posting a report with photos, sign-in
 - [ ] **Phase 4** — sightings
 - [ ] **Phase 5** — in-app chat
 - [ ] **Phase 6** — moderation, "reunited", expiry

@@ -16,7 +16,7 @@ function setup({
   apple = stubProvider(null),
   google = stubProvider(null),
   ...gatewayOptions
-}: { apple?: IdentityProvider; google?: IdentityProvider } & Parameters<typeof createInMemoryAuthGateway>[0] = {}) {
+}: { apple?: IdentityProvider | null; google?: IdentityProvider | null } & Parameters<typeof createInMemoryAuthGateway>[0] = {}) {
   const auth = createInMemoryAuthGateway(gatewayOptions);
   const { useAuth } = createAuthHooks({ gateway: auth.gateway, providers: { apple, google } });
   return { ...auth, useAuth };
@@ -205,5 +205,23 @@ describe("signOut", () => {
 
     expect(currentSession()).toBeNull();
     expect(Alert.alert).not.toHaveBeenCalled();
+  });
+});
+
+describe("an unconfigured provider", () => {
+  it("is reported as unavailable, so its button isn't shown", async () => {
+    const { useAuth } = setup({ apple: null });
+    const { result } = await renderHook(() => useAuth());
+
+    expect(result.current.availableProviders).toEqual({ apple: false, google: true });
+  });
+
+  it("answers 'not signed in' without alerting, rather than crashing", async () => {
+    const { useAuth, currentSession } = setup({ google: null });
+    const { result } = await renderHook(() => useAuth());
+
+    await expect(result.current.signInWithGoogle()).resolves.toBe(false);
+    expect(Alert.alert).not.toHaveBeenCalled();
+    expect(currentSession()).toBeNull();
   });
 });
