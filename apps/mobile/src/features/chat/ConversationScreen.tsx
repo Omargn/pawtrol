@@ -1,6 +1,6 @@
 import { router, Stack } from "expo-router";
 import { useState } from "react";
-import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Alert, FlatList, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { counterpart, MESSAGE_MAX, type Conversation, type Message } from "@/domain/chat/chat";
 import { reportTitle, timeAgo } from "@/features/reports/format";
@@ -166,8 +166,19 @@ function AboutReport({ conversation }: { conversation: Conversation }) {
 function Bubble({ message, mine }: { message: Message; mine: boolean }) {
   const { colors } = useTheme();
   const moderated = message.status !== "visible";
+  // Someone else's message can be reported; there's nothing to report about your own.
+  const offerFlag = () =>
+    Alert.alert("Report this message?", "Moderators can read a message only once it's been reported.", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Report", onPress: () => router.push({ pathname: "/flag", params: { type: "message", id: message.id } }) },
+    ]);
+
   return (
-    <View style={[styles.bubbleRow, mine ? styles.mine : styles.theirs]}>
+    <Pressable
+      onLongPress={mine || moderated ? undefined : offerFlag}
+      accessibilityHint={mine || moderated ? undefined : "Long press to report it"}
+      style={[styles.bubbleRow, mine ? styles.mine : styles.theirs]}
+    >
       <View
         style={[
           styles.bubble,
@@ -177,14 +188,14 @@ function Bubble({ message, mine }: { message: Message; mine: boolean }) {
           moderated && styles.moderated,
         ]}
       >
-        <Text selectable style={[typography.body, { color: mine ? colors.onAccent : colors.text }]}>
+        <Text selectable={mine} style={[typography.body, { color: mine ? colors.onAccent : colors.text }]}>
           {message.body}
         </Text>
       </View>
       <Text style={[typography.caption, { color: colors.textSecondary }]}>
         {moderated ? "Hidden by moderators · only you can see it" : timeAgo(message.createdAt)}
       </Text>
-    </View>
+    </Pressable>
   );
 }
 

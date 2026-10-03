@@ -92,7 +92,7 @@ describe("getReport", () => {
 describe("listSightings", () => {
   it("only lists visible sightings, newest first, even though RLS also returns the caller's hidden ones", async () => {
     const builder = makeQueryBuilder({
-      data: [{ id: "s1", seen_at: "2026-10-01T12:00:00Z", note: "By the park", photo_path: null, public_lng: -99.15, public_lat: 19.42, author: { display_name: "Ben" } }],
+      data: [{ id: "s1", seen_at: "2026-10-01T12:00:00Z", note: "By the park", photo_path: null, public_lng: -99.15, public_lat: 19.42, created_by: "u2", author: { display_name: "Ben" } }],
       error: null,
     });
     const { repository } = setup({ from: builder });
@@ -103,7 +103,7 @@ describe("listSightings", () => {
     expect(builder.eq).toHaveBeenCalledWith("status", "visible");
     expect(builder.order).toHaveBeenCalledWith("seen_at", { ascending: false });
     expect(sightings).toEqual([
-      { id: "s1", seenAt: "2026-10-01T12:00:00Z", note: "By the park", photoPath: null, location: { longitude: -99.15, latitude: 19.42 }, authorName: "Ben" },
+      { id: "s1", seenAt: "2026-10-01T12:00:00Z", note: "By the park", photoPath: null, location: { longitude: -99.15, latitude: 19.42 }, authorId: "u2", authorName: "Ben" },
     ]);
   });
 });
@@ -130,5 +130,52 @@ describe("addSighting", () => {
     await expect(repository.addSighting(sighting)).rejects.toMatchObject({
       name: "WriteError", code: "not_found", message: "That report isn't available anymore.",
     });
+  });
+});
+
+describe("listMine", () => {
+  it("asks only for the author's own reports, with one cover photo each", async () => {
+    const builder = makeQueryBuilder({
+      data: [
+        {
+          id: "r1", kind: "lost", status: "expired", species_id: 1, pet_name: "Toby", public_lng: -99.1, public_lat: 19.4,
+          last_seen_at: "2026-09-01T10:00:00Z", sighting_count: 2, expires_at: "2026-10-01T10:00:00Z",
+          photos: [{ storage_path: "u1/a.jpg" }],
+        },
+      ],
+      error: null,
+    });
+    const { repository } = setup({ from: builder });
+
+    const reports = await repository.listMine("u1");
+
+    expect(builder.eq).toHaveBeenCalledWith("created_by", "u1");
+    expect(builder.limit).toHaveBeenCalledWith(1, { referencedTable: "report_photos" });
+    expect(builder.select.mock.calls[0][0]).not.toMatch(/\blocation\b/);
+    expect(reports).toEqual([
+      {
+        id: "r1", kind: "lost", status: "expired", speciesId: 1, petName: "Toby",
+        location: { longitude: -99.1, latitude: 19.4 }, lastSeenAt: "2026-09-01T10:00:00Z", sightingCount: 2,
+        coverPhotoPath: "u1/a.jpg", expiresAt: "2026-10-01T10:00:00Z",
+      },
+    ]);
+  });
+});
+
+describe("status changes", () => {
+  it("closes and renews through the author-only RPCs", async () => {
+    const { client, repository } = setup({ rpc: { data: "2026-11-01T10:00:00Z", error: null } });
+
+    await repository.markReunited("r1");
+    await expect(repository.renewReport("r1")).resolves.toBe("2026-11-01T10:00:00Z");
+
+    expect(client.rpc).toHaveBeenCalledWith("mark_reunited", { p_report_id: "r1" });
+    expect(client.rpc).toHaveBeenCalledWith("renew_report", { p_report_id: "r1" });
+  });
+
+  it("maps someone else's attempt to a safe error", async () => {
+    const { repository } = setup({ rpc: { data: null, error: { code: "42501", message: "not_allowed" } } });
+
+    await expect(repository.markReunited("r1")).rejects.toMatchObject({ code: "not_allowed" });
   });
 });

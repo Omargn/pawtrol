@@ -95,6 +95,10 @@ export function withDemoReports(repository: ReportRepository, now = Date.now()):
     // Writes always go to the real backend; demo data is read-only.
     createReport: (report) => repository.createReport(report),
 
+    listMine: (userId) => repository.listMine(userId),
+    markReunited: (reportId) => repository.markReunited(reportId),
+    renewReport: (reportId) => repository.renewReport(reportId),
+
     async addSighting(sighting) {
       if (sighting.reportId.startsWith(DEMO_ID_PREFIX)) throw new WriteError("not_found");
       return repository.addSighting(sighting);

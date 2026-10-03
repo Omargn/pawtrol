@@ -49,6 +49,7 @@ export type Sighting = {
   note: string | null;
   photoPath: string | null;
   location: ApproximateLocation;
+  authorId: string;
   authorName: string;
 };
 
@@ -71,6 +72,9 @@ export type Bbox = { minLng: number; minLat: number; maxLng: number; maxLat: num
 
 /** null means "no filter" for that dimension. */
 export type ReportFilters = { kinds: ReportKind[] | null; speciesIds: number[] | null };
+
+/** One of the signed-in user's own reports, in any status. */
+export type MyReport = MapReport & { status: ReportStatus; expiresAt: string };
 
 /** What posting a report sends. `location` is exact; the server only ever publishes it snapped. */
 export type NewReport = {
@@ -103,4 +107,10 @@ export type ReportRepository = {
   createReport(report: NewReport): Promise<string>;
   /** Adds a sighting to an active report and returns its id. Idempotent on `clientId`. */
   addSighting(sighting: NewSighting): Promise<string>;
+  /** Every report `userId` posted, whatever its status, newest first, capped. */
+  listMine(userId: string): Promise<MyReport[]>;
+  /** Closes the caller's own active or expired report. Idempotent. */
+  markReunited(reportId: string): Promise<void>;
+  /** Keeps the caller's own active or expired report up for 30 more days; resolves to the new expiry. */
+  renewReport(reportId: string): Promise<string>;
 };

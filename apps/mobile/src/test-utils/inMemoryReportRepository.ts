@@ -1,3 +1,4 @@
+import { WriteError } from "@/domain/errors/writeError";
 import type { MapReport, NewReport, NewSighting, ReportDetail, ReportRepository, Sighting } from "@/domain/reports/report";
 
 export function makeMapReport(overrides: Partial<MapReport> = {}): MapReport {
@@ -39,7 +40,8 @@ export function makeReportDetail(overrides: Partial<ReportDetail> = {}): ReportD
 /**
  * A ReportRepository over plain arrays, filtering like the server does.
  * `calls` counts requests per method; `created` and `addedSightings` hold what
- * was written, keyed by clientId as the server's idempotency is.
+ * was written, keyed by clientId as the server's idempotency is. Status
+ * changes apply to `details` in place, with the server's allowed transitions.
  */
 export function createInMemoryReportRepository({
   reports = [] as MapReport[],
@@ -47,7 +49,21 @@ export function createInMemoryReportRepository({
   sightings = {} as Record<string, Sighting[]>,
   failWith,
 }: { reports?: MapReport[]; details?: ReportDetail[]; sightings?: Record<string, Sighting[]>; failWith?: Error } = {}) {
-  const calls = { listInBbox: 0, getReport: 0, listSightings: 0, createReport: 0, addSighting: 0 };
+  const calls = {
+    listInBbox: 0,
+    getReport: 0,
+    listSightings: 0,
+    createReport: 0,
+    addSighting: 0,
+    markReunited: 0,
+    renewReport: 0,
+  };
+  const own = (reportId: string) => {
+    const detail = details.find((candidate) => candidate.id === reportId);
+    if (!detail) throw new WriteError("not_found");
+    if (detail.status !== "active" && detail.status !== "expired") throw new WriteError("not_allowed");
+    return detail;
+  };
   const created = new Map<string, { id: string; report: NewReport }>();
   const addedSightings = new Map<string, { id: string; sighting: NewSighting }>();
   let failCreateWith = failWith;
@@ -93,6 +109,35 @@ export function createInMemoryReportRepository({
       const id = `sighting-${addedSightings.size + 1}`;
       addedSightings.set(sighting.clientId, { id, sighting });
       return id;
+    },
+    async listMine(userId) {
+      if (failWith) throw failWith;
+      return details
+        .filter((detail) => detail.authorId === userId)
+        .map((detail) => ({
+          id: detail.id,
+          kind: detail.kind,
+          status: detail.status,
+          speciesId: detail.speciesId,
+          petName: detail.petName,
+          location: detail.location,
+          lastSeenAt: detail.lastSeenAt,
+          sightingCount: detail.sightingCount,
+          coverPhotoPath: detail.photos[0]?.path ?? null,
+          expiresAt: detail.expiresAt,
+        }));
+    },
+    async markReunited(reportId) {
+      calls.markReunited++;
+      if (details.find((detail) => detail.id === reportId)?.status === "reunited") return;
+      own(reportId).status = "reunited";
+    },
+    async renewReport(reportId) {
+      calls.renewReport++;
+      const detail = own(reportId);
+      detail.status = "active";
+      detail.expiresAt = "2026-11-01T12:00:00.000Z";
+      return detail.expiresAt;
     },
   };
 

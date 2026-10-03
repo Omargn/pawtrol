@@ -12,10 +12,12 @@ type ReportCardProps = {
   species: Species[] | undefined;
   photoUrl: string | undefined;
   onPress: () => void;
+  /** An extra line, e.g. where one of your own reports stands. */
+  note?: string;
 };
 
 /** One report at a glance: the map's preview and each row of the list. */
-export function ReportCard({ report, species, photoUrl, onPress }: ReportCardProps) {
+export function ReportCard({ report, species, photoUrl, onPress, note }: ReportCardProps) {
   const { colors } = useTheme();
   const title = reportTitle(report, species);
   const sightings =
@@ -42,6 +44,11 @@ export function ReportCard({ report, species, photoUrl, onPress }: ReportCardPro
             .filter(Boolean)
             .join(" · ")}
         </Text>
+        {note ? (
+          <Text numberOfLines={1} style={[typography.caption, { color: colors.text }]}>
+            {note}
+          </Text>
+        ) : null}
       </View>
     </Pressable>
   );
