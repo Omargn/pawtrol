@@ -1,0 +1,23 @@
+# Starts the app signed out, with no saved state, connected to the local Metro
+# server. Location is denied so the map opens on its default point (Mexico
+# City), where the demo reports are.
+appId: ${APP_ID}
+---
+- launchApp:
+    clearState: true
+    clearKeychain: true
+    permissions:
+      location: never
+- runFlow:
+    file: open_link.yaml
+    env:
+      LINK: pawtrol://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8081
+# The development menu introduces itself on a fresh install.
+- runFlow:
+    when:
+      visible: Continue
+    commands:
+      - tapOn: Continue
+- extendedWaitUntil:
+    visible: All
+    timeout: 60000

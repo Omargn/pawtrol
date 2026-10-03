@@ -8,3 +8,4 @@ One file per decision: the context, what was decided, and what it costs. Add a n
 | [0002](0002-database-as-security-boundary.md) | The database is the security boundary; no API server | Accepted |
 | [0003](0003-session-storage.md) | Session in SecureStore, chunked | Accepted |
 | [0004](0004-maps.md) | react-native-maps behind an adapter, MapLibre later | Accepted |
+| [0005](0005-e2e-tests.md) | Read-only Maestro smoke tests, run locally, not in CI yet | Accepted |

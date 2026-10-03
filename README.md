@@ -2,7 +2,7 @@
 
 Lost and found pets on a map. Post a pet you lost or found, see reports near you, add a sighting ("I saw this dog here at 6 pm"), and message the owner without either side sharing a phone number or an email.
 
-> **Status:** early development. You can browse reports on a map and post one with photos; sightings come next. See the [roadmap](#roadmap).
+> **Status:** the MVP is feature-complete: map, posting with photos, sightings, in-app chat, moderation, and closing or renewing your own reports. Not yet released to the stores. See the [roadmap](#roadmap).
 
 ## Why it's built the way it is
 
@@ -43,6 +43,8 @@ Checks (the same ones CI runs):
 npm run lint && npm run typecheck && npm test
 ```
 
+End-to-end smoke tests run locally with [Maestro](https://maestro.mobile.dev): `npm run e2e` ([how](apps/mobile/e2e/README.md)).
+
 Database tests run in CI on the real Supabase stack (`supabase db start && supabase test db`). Without Docker, `tools/db-check` runs them on PGlite as a fast approximation.
 
 ### Your own Supabase project
@@ -69,12 +71,16 @@ select id, 'moderator' from auth.users where email = 'you@example.com';
 - [x] **Phase 1** — schema, RLS, RPCs and pgTAP tests
 - [x] **Phase 2** — map with clustering, list, filters and report details
 - [x] **Phase 3** — posting a report with photos, sign-in
-- [ ] **Phase 4** — sightings
-- [ ] **Phase 5** — in-app chat
-- [ ] **Phase 6** — moderation, "reunited", expiry
-- [ ] **Phase 7** — contributor docs and E2E tests
+- [x] **Phase 4** — sightings
+- [x] **Phase 5** — in-app chat
+- [x] **Phase 6** — moderation, "reunited", expiry
+- [x] **Phase 7** — contributor docs and E2E tests
 
 Later: push alerts for nearby lost pets, offline posting, automatic lost↔found matching.
+
+## Contributing
+
+Contributions are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md); security problems go through [SECURITY.md](SECURITY.md), never a public issue. Everyone taking part follows the [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## License
 

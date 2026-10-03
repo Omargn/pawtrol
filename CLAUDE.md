@@ -29,5 +29,6 @@ No workspace tooling (no root `package.json`). `apps/mobile` and `supabase` are 
 | Types | `npm run typecheck` |
 | Tests | `npm test` |
 | Leak guard | `./scripts/check-leaks.sh` (repo root) |
+| End-to-end (local, read-only) | `npm run e2e` with Metro running and demo data on (see `apps/mobile/e2e/README.md`) |
 | Database (fast, approximate) | `cd tools/db-check && npm run check` (repo root) |
 | Database (real stack) | CI: `supabase db start && supabase test db` |

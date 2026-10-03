@@ -1,0 +1,22 @@
+# Everything that writes asks a guest to sign in first, and says why.
+appId: ${APP_ID}
+name: Guests are asked to sign in before writing
+tags: [smoke]
+---
+- runFlow: ../subflows/launch.yaml
+- tapOn: Post
+- assertVisible: Sign in to post
+- tapOn: Messages
+- assertVisible: Sign in to see your messages
+- tapOn: Profile
+- assertVisible: You're browsing as a guest
+- runFlow:
+    file: ../subflows/open_link.yaml
+    env:
+      LINK: pawtrol://report/demo-1
+- extendedWaitUntil:
+    visible: I saw this pet
+    timeout: 15000
+- tapOn: I saw this pet
+- assertVisible: Log in
+- assertVisible: Create account
