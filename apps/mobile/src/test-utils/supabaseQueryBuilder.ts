@@ -1,7 +1,7 @@
 /** Mimics the Supabase query builder: every chain method returns itself, and the chain resolves like a promise once awaited. */
 export function makeQueryBuilder(result: { data: unknown; error: unknown }) {
   const builder: any = {};
-  for (const method of ["select", "order", "eq", "gt", "lt", "limit"]) {
+  for (const method of ["select", "order", "eq", "gt", "lt", "limit", "insert"]) {
     builder[method] = jest.fn(() => builder);
   }
   builder.maybeSingle = jest.fn(() => Promise.resolve(result));

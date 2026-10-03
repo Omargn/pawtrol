@@ -22,7 +22,7 @@ private.user_roles (moderator | admin)
 | `report_photos` | Up to 5 photos per report, ordered. | Read with the report. Writes: `create_report`. |
 | `sightings` | "Seen here, at this time" on a report. | Read via RLS; all columns except `location`. Writes: `add_sighting`. |
 | `conversations` | One per (report, contact). | Read: the two participants. Writes: `start_conversation`. |
-| `messages` | Chat messages. | Read/insert: participants. Insert only `conversation_id`, `body`; `sender_id` is always the caller. |
+| `messages` | Chat messages. | Read/insert: participants. Insert only `id`, `conversation_id`, `body`; `sender_id` is always the caller. |
 | `content_flags` | A user's report of abusive content. | Read: own flags; moderators all. Writes: `flag_content`. |
 | `moderation_events` | Append-only log of moderation status changes. | Read: moderators. Writes: moderation RPCs only. |
 | `private.user_roles` | Who is a moderator or admin. | None; `has_role()` only. |
@@ -58,7 +58,7 @@ Photos and sightings follow their report: when it leaves public view, so do they
 | `moderate(p_target_type, p_target_id, p_action, p_reason?)` | moderators | `hide`, `remove`, `restore`. Resolves open flags; logs the change. Returns the new status. |
 | `has_role(required_role)` | signed in | For showing moderation UI. RLS still decides. |
 
-Messages are inserted directly (`insert into messages (conversation_id, body)`), capped at 30 per minute per sender.
+Messages are inserted directly (`insert into messages (id, conversation_id, body)`), capped at 30 per minute per sender. The client generates `id` once per message and reuses it on retries, so a resend fails on the primary key (`23505`) instead of duplicating; the app reads that as "already sent".
 
 ### Errors
 

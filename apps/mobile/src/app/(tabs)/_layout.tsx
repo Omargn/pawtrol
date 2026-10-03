@@ -32,6 +32,16 @@ export default function TabsLayout() {
         />
         <NativeTabs.Trigger.Label>Post</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="messages">
+        <NativeTabs.Trigger.Icon
+          sf="bubble.left.and.bubble.right"
+          src={{
+            default: <NativeTabs.Trigger.VectorIcon family={Ionicons} name="chatbubbles-outline" />,
+            selected: <NativeTabs.Trigger.VectorIcon family={Ionicons} name="chatbubbles" />,
+          }}
+        />
+        <NativeTabs.Trigger.Label>Messages</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
       <NativeTabs.Trigger name="profile">
         <NativeTabs.Trigger.Icon
           sf="person"
