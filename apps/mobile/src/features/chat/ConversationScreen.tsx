@@ -1,6 +1,6 @@
 import { router, Stack } from "expo-router";
 import { useState } from "react";
-import { FlatList, KeyboardAvoidingView, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { counterpart, MESSAGE_MAX, type Conversation, type Message } from "@/domain/chat/chat";
 import { reportTitle, timeAgo } from "@/features/reports/format";
@@ -9,6 +9,7 @@ import { useConversation, useMessages, useSendMessage } from "@/hooks/useChat";
 import { useSession } from "@/hooks/useSession";
 import { useSpecies } from "@/hooks/useSpecies";
 import { Icon } from "@/ui/Icon";
+import { KeyboardAvoidingScreen } from "@/ui/KeyboardAvoidingScreen";
 import { ScreenLoading, ScreenMessage } from "@/ui/ScreenState";
 import { radii, spacing, typography } from "@/ui/theme";
 import { useTheme } from "@/ui/useTheme";
@@ -65,7 +66,7 @@ function Thread({ conversation, userId }: { conversation: Conversation; userId: 
   return (
     <>
       <Stack.Screen options={{ title: other.name }} />
-      <KeyboardAvoidingView behavior="padding" style={[styles.screen, { backgroundColor: colors.background }]}>
+      <KeyboardAvoidingScreen style={{ backgroundColor: colors.background }}>
         {messages.isError ? (
           <ScreenMessage
             title="Couldn't load messages"
@@ -131,7 +132,7 @@ function Thread({ conversation, userId }: { conversation: Conversation; userId: 
             </Pressable>
           </View>
         </View>
-      </KeyboardAvoidingView>
+      </KeyboardAvoidingScreen>
     </>
   );
 }
@@ -208,7 +209,6 @@ function OutgoingBubble({ message, onRetry }: { message: OutgoingMessage; onRetr
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1 },
   list: { padding: spacing.lg, gap: spacing.md },
   about: { padding: spacing.md, borderRadius: radii.md, gap: spacing.xs, marginBottom: spacing.sm },
   bubbleRow: { gap: 2, maxWidth: "80%" },
