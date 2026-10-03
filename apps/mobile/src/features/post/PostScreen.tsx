@@ -1,6 +1,7 @@
 import { router } from "expo-router";
 import { useEffect, useMemo } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { isRetryable } from "@/domain/errors/writeError";
 import type { Coordinates } from "@/domain/location/locationService";
 import { DetailsStep, KindStep, LocationStep, PhotosStep, ReviewStep } from "@/features/post/PostSteps";
@@ -42,6 +43,7 @@ export function PostScreen() {
 
 function PostFlow({ userId }: { userId: string }) {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const species = useSpecies();
   const location = useUserLocation();
   const { state, dispatch, submit, pickPhotos, takePhoto, reset, remainingPhotos } = usePostReport();
@@ -66,67 +68,90 @@ function PostFlow({ userId }: { userId: string }) {
       : "Posting…";
 
   return (
-    <ScrollView
-      contentInsetAdjustmentBehavior="automatic"
-      keyboardShouldPersistTaps="handled"
-      automaticallyAdjustKeyboardInsets
-      // The location step's map takes over vertical drags.
-      scrollEnabled={step !== "location"}
-      style={{ backgroundColor: colors.background }}
-      contentContainerStyle={styles.content}
-    >
-      <View style={styles.header}>
-        <Text style={[typography.caption, { color: colors.textSecondary }]}>
-          Step {index + 1} of {STEPS.length}
-        </Text>
-        <View style={[styles.track, { backgroundColor: colors.surfaceMuted }]}>
-          <View style={[styles.progress, { width: `${((index + 1) / STEPS.length) * 100}%`, backgroundColor: colors.accent }]} />
+    <View style={[styles.screen, { backgroundColor: colors.background }]}>
+      {/* There's no navigation bar on this tab, so nothing would otherwise hide content scrolling under the status bar. */}
+      <View
+        pointerEvents="none"
+        style={[styles.statusBar, { height: insets.top, backgroundColor: colors.background }]}
+      />
+      <ScrollView
+        contentInsetAdjustmentBehavior="automatic"
+        keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets
+        // The location step's map takes over vertical drags.
+        scrollEnabled={step !== "location"}
+        style={{ backgroundColor: colors.background }}
+        contentContainerStyle={styles.content}
+      >
+        <View style={styles.header}>
+          <Text style={[typography.caption, { color: colors.textSecondary }]}>
+            Step {index + 1} of {STEPS.length}
+          </Text>
+          <View style={[styles.track, { backgroundColor: colors.surfaceMuted }]}>
+            <View
+              style={[
+                styles.progress,
+                { width: `${((index + 1) / STEPS.length) * 100}%`, backgroundColor: colors.accent },
+              ]}
+            />
+          </View>
+          <Text accessibilityRole="header" style={[typography.title, { color: colors.text }]}>
+            {TITLES[step]}
+          </Text>
         </View>
-        <Text accessibilityRole="header" style={[typography.title, { color: colors.text }]}>
-          {TITLES[step]}
-        </Text>
-      </View>
 
-      {step === "kind" ? <KindStep draft={draft} dispatch={dispatch} /> : null}
-      {step === "details" ? <DetailsStep draft={draft} dispatch={dispatch} species={species.data} /> : null}
-      {step === "location" ? <LocationStep draft={draft} dispatch={dispatch} fallback={fallback} /> : null}
-      {step === "photos" ? (
-        <PhotosStep draft={draft} dispatch={dispatch} pickPhotos={pickPhotos} takePhoto={takePhoto} remaining={remainingPhotos} />
-      ) : null}
-      {step === "review" ? <ReviewStep draft={draft} dispatch={dispatch} species={species.data} /> : null}
-
-      {submission.status === "failed" ? (
-        <Text selectable style={[typography.body, styles.error, { color: colors.danger, borderColor: colors.danger }]}>
-          {submission.error.message}
-          {isRetryable(submission.error) ? " Your photos that already uploaded won't be sent again." : ""}
-        </Text>
-      ) : null}
-
-      <View style={styles.footer}>
-        {step === "review" ? (
-          <Button
-            label={submission.status === "failed" && isRetryable(submission.error) ? "Try again" : submitLabel}
-            onPress={() => submit(userId)}
-            busy={submitting}
-            disabled={issues.length > 0}
+        {step === "kind" ? <KindStep draft={draft} dispatch={dispatch} /> : null}
+        {step === "details" ? <DetailsStep draft={draft} dispatch={dispatch} species={species.data} /> : null}
+        {step === "location" ? <LocationStep draft={draft} dispatch={dispatch} fallback={fallback} /> : null}
+        {step === "photos" ? (
+          <PhotosStep
+            draft={draft}
+            dispatch={dispatch}
+            pickPhotos={pickPhotos}
+            takePhoto={takePhoto}
+            remaining={remainingPhotos}
           />
-        ) : (
-          <>
-            {issues.length > 0 && step !== "kind" ? (
-              <Text style={[typography.caption, { color: colors.textSecondary }]}>{issues[0]}</Text>
-            ) : null}
-            <Button label="Continue" onPress={() => dispatch({ type: "next" })} disabled={issues.length > 0} />
-          </>
-        )}
-        {index > 0 && !submitting ? (
-          <Button label="Back" variant="secondary" onPress={() => dispatch({ type: "back" })} />
         ) : null}
-      </View>
-    </ScrollView>
+        {step === "review" ? <ReviewStep draft={draft} dispatch={dispatch} species={species.data} /> : null}
+
+        {submission.status === "failed" ? (
+          <Text
+            selectable
+            style={[typography.body, styles.error, { color: colors.danger, borderColor: colors.danger }]}
+          >
+            {submission.error.message}
+            {isRetryable(submission.error) ? " Your photos that already uploaded won't be sent again." : ""}
+          </Text>
+        ) : null}
+
+        <View style={styles.footer}>
+          {step === "review" ? (
+            <Button
+              label={submission.status === "failed" && isRetryable(submission.error) ? "Try again" : submitLabel}
+              onPress={() => submit(userId)}
+              busy={submitting}
+              disabled={issues.length > 0}
+            />
+          ) : (
+            <>
+              {issues.length > 0 && step !== "kind" ? (
+                <Text style={[typography.caption, { color: colors.textSecondary }]}>{issues[0]}</Text>
+              ) : null}
+              <Button label="Continue" onPress={() => dispatch({ type: "next" })} disabled={issues.length > 0} />
+            </>
+          )}
+          {index > 0 && !submitting ? (
+            <Button label="Back" variant="secondary" onPress={() => dispatch({ type: "back" })} />
+          ) : null}
+        </View>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: { flex: 1 },
+  statusBar: { position: "absolute", top: 0, left: 0, right: 0, zIndex: 1 },
   content: { padding: spacing.lg, gap: spacing.xl, paddingBottom: 120 },
   header: { gap: spacing.sm },
   track: { height: 4, borderRadius: radii.pill, overflow: "hidden" },

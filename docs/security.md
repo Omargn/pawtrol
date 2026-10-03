@@ -53,6 +53,7 @@ Each table's pgTAP file covers at least: anonymous user, another signed-in user,
 
 - The session is stored in the device keychain/keystore ([ADR 0003](adr/0003-session-storage.md)).
 - The user's own location is never sent to the server except as a location they deliberately chose for a report or sighting. The map asks for the *visible area*, snapped outward to a grid a quarter of its size, not for the device position.
+- Photos are re-encoded on the device before upload (`PhotoPreparer`), and `submitReport` is the only path to storage, so no original file leaves the phone. Checked end to end on iOS: a photo carrying GPS EXIF was posted, downloaded back from Storage, and had no GPS block, device make/model or capture date — only orientation, resolution, color space and dimensions.
 - Photos are fetched through short-lived signed URLs and cached on the device by storage path, so a re-signed URL never re-downloads a photo.
 - Analytics events never carry precise coordinates.
 
