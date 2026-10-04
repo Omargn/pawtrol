@@ -1,8 +1,43 @@
-# Pawtrol
+<div align="center">
 
-Lost and found pets on a map. Post a pet you lost or found, see reports near you, add a sighting ("I saw this dog here at 6 pm"), and message the owner without either side sharing a phone number or an email.
+# 🐾 Pawtrol
 
-> **Status:** the MVP is feature-complete: map, posting with photos, sightings, in-app chat, moderation, and closing or renewing your own reports. Not yet released to the stores. See the [roadmap](#roadmap).
+**Lost and found pets on a map.**
+
+Post a pet you lost or found, see reports near you, add a sighting, and message the owner without either side sharing a phone number or an email.
+
+[![CI](https://github.com/Omargn/pawtrol/actions/workflows/ci.yml/badge.svg)](https://github.com/Omargn/pawtrol/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+![Expo SDK 58](https://img.shields.io/badge/Expo-SDK%2058-000020?logo=expo&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)
+![Supabase](https://img.shields.io/badge/Supabase-3FCF8E?logo=supabase&logoColor=white)
+![Platforms](https://img.shields.io/badge/platforms-iOS%20%7C%20Android-lightgrey)
+
+[Features](#features) · [Getting started](#getting-started) · [Architecture](docs/architecture.md) · [Roadmap](#roadmap) · [Contributing](#contributing)
+
+</div>
+
+<!--
+Screenshots: drop PNGs in docs/images/ and uncomment.
+<p align="center">
+  <img src="docs/images/map.png" width="240" alt="Map of nearby reports" />
+  <img src="docs/images/report.png" width="240" alt="Report details with sightings" />
+  <img src="docs/images/chat.png" width="240" alt="In-app chat" />
+</p>
+-->
+
+> **Status:** the MVP is feature-complete. Not yet released to the stores. See the [roadmap](#roadmap).
+
+## Features
+
+| | |
+|---|---|
+| 🗺️ **Map and list** | Nearby lost and found reports with clustering and filters |
+| 📸 **Post with photos** | Report a lost or found pet in a few taps |
+| 👀 **Sightings** | "I saw this dog here at 6 pm", pinned on the report |
+| 💬 **In-app chat** | Reach the owner without sharing a phone number or email |
+| 🎉 **Reunited and renew** | Close your report when the pet is home, or keep it alive |
+| 🛡️ **Moderation** | Flagging and a moderator queue with undo |
 
 ## Why it's built the way it is
 
